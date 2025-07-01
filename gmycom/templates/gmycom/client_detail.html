@@ -1,0 +1,204 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+{% load humanize %} {# Pour formater les nombres comme le revenu mensuel #}
+
+{% block title %}Fiche Client - {{ client.nom }} {{ client.prenom }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-6 lg:px-8">
+    {# En-tête avec titre et boutons d'action #}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Fiche Client</h1>
+        <div class="flex flex-wrap items-center gap-3"> {# Utilisation de gap et flex-wrap pour le responsive des boutons #}
+            <a href="{% url 'client_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Retour à la liste
+            </a>
+            <a href="{% url 'client_update' client.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Modifier
+            </a>
+            {# Le bouton Exporter en PDF pointera vers une URL que vous devrez implémenter dans urls.py et views.py #}
+            <a href="{% url 'client_pdf' client.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" target="_blank" title="Exporter la fiche client en PDF">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Exporter en PDF
+            </a>
+        </div>
+    </div>
+
+    {# Section Informations Personnelles #}
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-info-circle mr-3 text-blue-600"></i>Informations Personnelles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            {# Photo de profil du client #}
+            <div class="flex items-center col-span-1 md:col-span-2 mb-4"> {# Prend toute la largeur sur mobile, et deux colonnes sur desktop #}
+                <div class="flex-shrink-0 h-28 w-28 sm:h-32 sm:w-32 mr-6">
+                    {# Utilise photo_document préchargé dans la vue (si configuré) ou documents.filter #}
+                    {% with photo_doc=client.photo_document.0 %} {# Assurez-vous que client.photo_document est préchargé et contient le document PHOTO_ID #}
+                        {% if photo_doc and photo_doc.fichier %}
+                        <img class="h-full w-full rounded-full object-cover shadow-lg border-2 border-blue-200" src="{{ photo_doc.fichier.url }}" alt="Photo de {{ client.prenom }} {{ client.nom }}" onerror="this.onerror=null; this.src='https://placehold.co/128x128/cccccc/ffffff?text=NP';">
+                        {% else %}
+                        <img class="h-full w-full rounded-full object-cover shadow-lg border-2 border-gray-200" src="https://placehold.co/128x128/cccccc/ffffff?text=NP" alt="Pas de photo">
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 mb-1">{{ client.prenom }} {{ client.nom }}</p>
+                    <p class="text-md text-gray-600"><i class="fas fa-id-card mr-2 text-gray-500"></i>CNI: <span class="font-medium text-gray-700">{{ client.numero_cni|default:"N/A" }}</span></p>
+                </div>
+            </div>
+
+            {# Détails personnels #}
+            <div>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-birthday-cake mr-2 text-gray-400"></i>Date de Naissance: <span class="font-medium text-gray-800">{{ client.date_naissance|date:"d/m/Y"|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-map-pin mr-2 text-gray-400"></i>Lieu de Naissance: <span class="font-medium text-gray-800">{{ client.lieu_naissance|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-flag mr-2 text-gray-400"></i>Nationalité: <span class="font-medium text-gray-800">{{ client.nationalite|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-venus-mars mr-2 text-gray-400"></i>Sexe: <span class="font-medium text-gray-800">{{ client.get_sexe_display|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-heart mr-2 text-gray-400"></i>Situation Matrimoniale: <span class="font-medium text-gray-800">{{ client.get_situation_matrimoniale_display|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-users mr-2 text-gray-400"></i>Personnes à Charge: <span class="font-medium text-gray-800">{{ client.nombre_personnes_charge|default:"N/A" }}</span></p>
+            </div>
+
+            {# Coordonnées #}
+            <div>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-phone mr-2 text-gray-400"></i>Téléphone: <span class="font-medium text-gray-800">{{ client.telephone|default:"N/A" }}</span></p>
+                {% if client.email %}<p class="text-sm text-gray-600 mb-2"><i class="fas fa-envelope mr-2 text-gray-400"></i>Email: <span class="font-medium text-gray-800">{{ client.email }}</span></p>{% endif %}
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>Adresse: <span class="font-medium text-gray-800">{{ client.adresse|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-globe mr-2 text-gray-400"></i>Pays: <span class="font-medium text-gray-800">{{ client.adresse_pays|default:"N/A" }}</span></p>
+            </div>
+        </div>
+    </div>
+
+    {# Section Informations Professionnelles et Financières #}
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-briefcase mr-3 text-green-600"></i>Informations Professionnelles et Financières</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-user-tie mr-2 text-gray-400"></i>Profession: <span class="font-medium text-gray-800">{{ client.profession|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-industry mr-2 text-gray-400"></i>Secteur d'activité: <span class="font-medium text-gray-800">{{ client.secteur_activite|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-money-bill-wave mr-2 text-gray-400"></i>Revenu Mensuel: <span class="font-medium text-gray-800">{% if client.revenu_mensuel %}{{ client.revenu_mensuel|floatformat:2|intcomma }} XOF{% else %}N/A{% endif %}</span></p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-calendar-alt mr-2 text-gray-400"></i>Fréquence Revenu: <span class="font-medium text-gray-800">{{ client.get_frequence_revenu_display|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-building mr-2 text-gray-400"></i>Employeur: <span class="font-medium text-gray-800">{{ client.nom_employeur|default:"N/A" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-hourglass-half mr-2 text-gray-400"></i>Ancienneté (mois): <span class="font-medium text-gray-800">{{ client.anciennete_emploi|default:"N/A" }}</span></p>
+            </div>
+        </div>
+    </div>
+
+    {# Section Informations Administratives #}
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-cogs mr-3 text-purple-600"></i>Informations Administratives</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-plus-circle mr-2 text-gray-400"></i>Date de Création: <span class="font-medium text-gray-800">{{ client.date_creation|date:"d/m/Y H:i" }}</span></p>
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-sync-alt mr-2 text-gray-400"></i>Dernière Modif.: <span class="font-medium text-gray-800">{{ client.date_modification|date:"d/m/Y H:i" }}</span></p>
+            </div>
+            <div>
+                {% if client.agent %}
+                    <p class="text-sm text-gray-600 mb-2"><i class="fas fa-user-tie mr-2 text-gray-400"></i>Agent Responsable: <span class="font-medium text-gray-800">{{ client.agent.get_full_name|default:client.agent.username }}</span></p>
+                {% else %}
+                    <p class="text-sm text-gray-600 mb-2"><i class="fas fa-user-tie mr-2 text-gray-400"></i>Agent Responsable: <span class="font-medium text-gray-800">Non assigné</span></p>
+                {% endif %}
+                <p class="text-sm text-gray-600 mb-2"><i class="fas fa-check-circle mr-2 {% if client.is_active %}text-green-500{% else %}text-red-500{% endif %}"></i>Statut Actif: 
+                    <span class="font-medium text-gray-800">
+                        {% if client.is_active %}Oui{% else %}Non{% endif %}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+    {# Section Documents Associés #}
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-folder-open mr-3 text-orange-500"></i>Documents Associés</h2>
+        {% if client.all_client_documents %} {# Assurez-vous que 'all_client_documents' est préchargé dans votre vue #}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for doc in client.all_client_documents %}
+                <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col">
+                    <div class="p-4 bg-gray-50 border-b border-gray-200">
+                        <p class="text-sm font-medium text-gray-700">Type: <span class="font-semibold">{{ doc.get_type_document_display }}</span></p>
+                    </div>
+                    <div class="flex-grow flex items-center justify-center bg-gray-100 p-4" style="min-height: 180px;">
+                        {% if doc.fichier %}
+                            {% with file_ext=doc.fichier.url|lower|slice:"-4:" %} {# Prend les 4 derniers caractères pour l'extension #}
+                            {% if file_ext == ".pdf" %}
+                                <a href="{{ doc.fichier.url }}" target="_blank" class="text-blue-600 hover:underline flex flex-col items-center">
+                                    <i class="fas fa-file-pdf fa-4x text-red-500 mb-2"></i>
+                                    <span class="text-sm text-center">Visualiser PDF</span>
+                                </a>
+                            {% elif file_ext == ".doc" or doc.fichier.url|lower|slice:"-5:" == ".docx" %}
+                                <a href="{{ doc.fichier.url }}" target="_blank" class="text-blue-600 hover:underline flex flex-col items-center">
+                                    <i class="fas fa-file-word fa-4x text-blue-500 mb-2"></i>
+                                    <span class="text-sm text-center">Télécharger Document</span>
+                                </a>
+                            {% elif file_ext == ".png" or file_ext == ".jpg" or file_ext == ".peg" or file_ext == ".gif" or file_ext == ".bmp" %}
+                                <img src="{{ doc.fichier.url }}" alt="{{ doc.get_type_document_display }}" class="max-w-full max-h-48 object-contain rounded-md shadow-md cursor-pointer" onclick="openImageModal('{{ doc.fichier.url }}', '{{ doc.get_type_document_display }}')">
+                            {% else %}
+                                {# Pour les autres types de fichiers non prévisualisables #}
+                                <a href="{{ doc.fichier.url }}" target="_blank" class="text-blue-600 hover:underline flex flex-col items-center">
+                                    <i class="fas fa-file fa-4x text-gray-500 mb-2"></i>
+                                    <span class="text-sm text-center">Ouvrir le fichier</span>
+                                </a>
+                            {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <p class="text-gray-500 text-sm">Aucun fichier</p>
+                        {% endif %}
+                    </div>
+                    <div class="p-4 bg-white">
+                        {% if doc.description %}
+                            <p class="text-xs text-gray-500 mt-2 mb-2">{{ doc.description }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-400">Téléchargé le: {{ doc.date_telechargement|date:"d/m/Y H:i" }}</p>
+                        <a href="{{ doc.fichier.url }}" target="_blank" class="mt-3 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400">
+                            <i class="fas fa-download mr-1"></i> Télécharger
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500">Aucun document associé à ce client.</p>
+        {% endif %}
+    </div>
+
+    <!-- Modale pour l'affichage des images en grand -->
+    <div id="imageModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="relative bg-white rounded-lg shadow-xl p-4 max-w-3xl w-full mx-4 max-h-[90vh] overflow-auto">
+            <button type="button" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl" onclick="closeImageModal()">
+                &times;
+            </button>
+            <h3 id="modalImageTitle" class="text-lg font-semibold text-gray-900 mb-4"></h3>
+            <img id="modalImageView" src="" alt="Image en grand" class="max-w-full h-auto max-h-[80vh] object-contain mx-auto">
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function openImageModal(imageUrl, title) {
+        document.getElementById('modalImageView').src = imageUrl;
+        document.getElementById('modalImageTitle').textContent = title;
+        document.getElementById('imageModal').classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+        document.getElementById('imageModal').classList.add('hidden');
+    }
+
+    // Fermer la modale si on clique en dehors de son contenu
+    document.getElementById('imageModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeImageModal();
+        }
+    });
+
+    // Fermer la modale avec la touche Échap
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !document.getElementById('imageModal').classList.contains('hidden')) {
+            closeImageModal();
+        }
+    });
+</script>
+{%endblock%}

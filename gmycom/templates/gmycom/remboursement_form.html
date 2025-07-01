@@ -1,0 +1,752 @@
+{% extends 'gmycom/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<main class="px-6 py-8">
+    <header class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">{{ title }}</h1>
+        {% if form.instance.credit %}
+        <a href="{% url 'credit_detail' pk=form.instance.credit.pk %}"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Retour au détail du crédit
+        </a>
+        {% else %}
+        <a href="{% url 'credit_list' %}"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Retour à la liste des crédits
+        </a>
+        {% endif %}
+    </header>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6 space-y-8">
+        <section aria-label="Sélection du Crédit" class="border border-gray-200 rounded-md p-6">
+            <h2 class="font-semibold mb-4 flex items-center gap-2 text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                </svg>
+                Sélection du Crédit
+            </h2>
+            <div class="w-full max-w-md">
+                <label for="credit-search-input" class="block text-gray-700 font-medium mb-1">
+                    Crédit Concerné (Rechercher par N° Crédit ou Nom du client) <span class="text-red-600">*</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="credit-search-input"
+                        class="block w-full rounded-md border border-gray-300 p-2 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Rechercher par N° Crédit, Nom, Prénom ou Email du client..." autocomplete="off"
+                        aria-autocomplete="list" aria-controls="credit-search-results" aria-expanded="false"
+                        aria-haspopup="listbox"
+                        value="{% if form.instance.credit %}{{ form.instance.credit.numero_credit }} ({{ form.instance.credit.client.get_full_name }}){% endif %}">
+
+                    <!-- Champ précédemment caché maintenant visible -->
+                    
+
+                    <div id="credit-search-results"
+                        class="absolute z-10 bg-white border border-gray-300 rounded-md shadow-lg w-full max-h-60 overflow-y-auto mt-1 custom-scrollbar hidden"
+                        role="listbox"></div>
+                </div>
+                {% if form.credit.help_text %}
+                <p class="mt-1 text-sm text-gray-500">{{ form.credit.help_text }}</p>
+                {% endif %}
+                {% for error in form.credit.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+                <p id="noResultsMsg" class="text-sm text-red-600 mt-1 hidden">Aucun crédit trouvé.</p>
+            </div>
+        </section>
+
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-2 border border-gray-200 rounded-md p-6 bg-gray-50 shadow-sm" aria-live="polite"
+                aria-atomic="true">
+                <h2 class="font-semibold mb-4 flex items-center gap-2 text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 7v4a1 1 0 001 1h3v4a1 1 0 001 1h2v-2a1 1 0 011-1h3v-2a1 1 0 011-1h4" />
+                    </svg>
+                    Informations du Crédit
+                </h2>
+                <dl class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-gray-700">
+                    <div>
+                        <dt class="font-semibold">Numéro de crédit</dt>
+                        <dd id="infoCreditNum" class="text-blue-600 font-mono select-all">--</dd>
+                    </div>
+                    <div class="md:col-span-2">
+                        <dt class="font-semibold flex items-center gap-2">Client</dt>
+                        <dd id="infoClientName" class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M5.121 17.804A12.028 12.028 0 0112 15c2.485 0 4.78.804 6.579 2.17M15 11a3 3 0 11-6 0 3 3 0 016 0z">
+                                </path>
+                            </svg>
+                            <span id="clientNameText">--</span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="font-semibold">Montant du crédit</dt>
+                        <dd id="infoCreditAmount" class="text-green-600 text-lg font-bold">-- FCFA</dd>
+                    </div>
+                    <div>
+                        <dt class="font-semibold">Taux d'intérêt</dt>
+                        <dd id="infoInterestRate">--</dd>
+                    </div>
+                    <div>
+                        <dt class="font-semibold">Durée</dt>
+                        <dd id="infoDuration">--</dd>
+                    </div>
+                    <div class="md:col-span-3">
+                        <dt class="font-semibold">Progression</dt>
+                        <dd>
+                            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden text-xs text-white">
+                                <div id="progressBar" class="bg-blue-600 h-4" style="width: 0%">Remboursé 0%</div>
+                            </div>
+                            <div class="flex justify-between text-xs mt-1 text-gray-600 font-mono">
+                                <span>0 FCFA</span><span id="progressBarTotal">-- FCFA</span>
+                            </div>
+                        </dd>
+                    </div>
+                    <div class="md:col-span-3">
+                        <dt class="font-semibold">Montant restant dû</dt>
+                        <dd id="remainingAmount" class="text-orange-600 font-bold text-xl">-- FCFA</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <form method="post" id="remboursementForm" class="border border-gray-200 rounded-md p-6 bg-white shadow-sm"
+                aria-label="Formulaire de nouveau remboursement">
+                {% csrf_token %}
+                {{ form.credit }}
+                <h2 class="font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 10h11M9 21V3M16 11v6a3 3 0 003 3h1a3 3 0 003-3v-1a3 3 0 00-3-3h-1a3 3 0 00-3 3z">
+                        </path>
+                    </svg>
+                    Nouveau Remboursement
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="{{ form.montant.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.montant.label }} <span class="text-red-600">*</span>
+                        </label>
+                        {{ form.montant }}
+                        <p id="maxMontant" class="text-xs text-gray-500 mt-1">Maximum: -- FCFA</p>
+                        {% if form.montant.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.montant.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.montant.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div id="repayment-breakdown" class="bg-gray-100 p-3 rounded-md text-sm">
+                        <p class="text-gray-500">Saisissez le montant du remboursement pour voir la répartition.</p>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.methode_paiement.id_for_label }}"
+                            class="block text-sm font-medium text-gray-700">
+                            {{ form.methode_paiement.label }} <span class="text-red-600">*</span>
+                        </label>
+                        {{ form.methode_paiement }}
+                        {% if form.methode_paiement.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.methode_paiement.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.methode_paiement.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.reference.id_for_label }}"
+                            class="block text-sm font-medium text-gray-700">
+                            {{ form.reference.label }}
+                        </label>
+                        {{ form.reference }}
+                        {% if form.reference.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.reference.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.reference.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.notes.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.notes.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">Erreur(s) :</strong>
+                        <ul class="list-disc ml-5">
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-blue-600 text-white font-semibold rounded-md py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        <span class="inline-flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                                </path>
+                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 animate-spin" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" id="loadingIcon" style="display:none;">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25" />
+                                <path d="M4 12a8 8 0 018-8" />
+                            </svg>
+                            Enregistrer le remboursement
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section id="historiqueSection" class="border border-gray-200 rounded-md p-6 bg-white shadow-sm" hidden>
+            <h2 class="font-semibold mb-4 flex items-center gap-2 text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 18v-4M3 12h18" />
+                </svg>
+                Historique des remboursements
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300 text-sm text-gray-700">
+                    <thead>
+                        <tr class="bg-gray-100 text-left">
+                            <th class="border border-gray-300 p-2">Date</th>
+                            <th class="border border-gray-300 p-2">Montant</th>
+                            <th class="border border-gray-300 p-2">Méthode</th>
+                            <th class="border border-gray-300 p-2">Référence</th>
+                            <th class="border border-gray-300 p-2">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historiqueBody">
+                        </tbody>
+                </table>
+            </div>
+            <p id="noHistoryMsg" class="text-sm text-gray-500 mt-4 text-center hidden">Aucun remboursement trouvé pour
+                ce crédit.</p>
+        </section>
+    </div>
+</main>
+
+<style>
+    /* Styles généraux pour les champs de formulaire (basés sur form-control) */
+    .form-input,
+    .form-select,
+    .form-textarea {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        /* rounded-md */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        border-color: #3b82f6;
+        /* blue-500 */
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        /* focus:ring-blue-500 avec opacité */
+    }
+
+    /* Custom scrollbar for dropdown */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #3b82f6;
+        border-radius: 4px;
+    }
+
+    /* Scrollbar for Firefox */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #3b82f6 transparent;
+    }
+</style>
+
+{# Balise script pour passer l'ID initial du crédit de manière sécurisée au JavaScript #}
+<script id="initial-credit-id-data" type="application/json">
+    {{ form.instance.credit.pk|default_if_none:""|json_script:"initial_credit_id_data" }}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const creditSearchInput = document.getElementById('credit-search-input');
+        const creditHiddenInput = document.getElementById('{{ form.credit.id_for_label }}');
+        const creditSearchResults = document.getElementById('credit-search-results');
+        const noResultsMsg = document.getElementById("noResultsMsg");
+
+        // Infos crédit elements
+        const infoCreditNum = document.getElementById("infoCreditNum");
+        const clientNameText = document.getElementById("clientNameText");
+        const infoCreditAmount = document.getElementById("infoCreditAmount");
+        const infoInterestRate = document.getElementById("infoInterestRate");
+        const infoDuration = document.getElementById("infoDuration");
+        const progressBar = document.getElementById("progressBar");
+        const progressBarTotal = document.getElementById("progressBarTotal");
+        const remainingAmountDisplay = document.getElementById("remainingAmount"); // Renommé pour éviter conflit
+
+        // Form elements
+        const montantInput = document.getElementById('{{ form.montant.id_for_label }}');
+        const maxMontantText = document.getElementById('maxMontant');
+        const repaymentBreakdownDiv = document.getElementById('repayment-breakdown');
+        const methodePaiementSelect = document.getElementById('{{ form.methode_paiement.id_for_label }}');
+        const referenceInput = document.getElementById('{{ form.reference.id_for_label }}');
+        const notesInput = document.getElementById('{{ form.notes.id_for_label }}');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingIcon = document.getElementById("loadingIcon");
+
+        // Historique elements
+        const historiqueSection = document.getElementById("historiqueSection");
+        const historiqueBody = document.getElementById("historiqueBody");
+        const noHistoryMsg = document.getElementById("noHistoryMsg");
+
+        let currentCreditDetails = null; // Stocke les détails du crédit sélectionné
+
+        // Fonction pour formater le montant en XOF
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'XOF',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Initialisation si un crédit est déjà sélectionné (mode édition ou pré-rempli)
+        const initialCreditIdElement = document.getElementById('initial_credit_id_data');
+        let initialCreditId = '';
+        if (initialCreditIdElement && initialCreditIdElement.textContent) {
+            try {
+                const parsedValue = JSON.parse(initialCreditIdElement.textContent);
+                if (parsedValue !== null && parsedValue !== undefined && String(parsedValue).trim() !== '') {
+                    initialCreditId = String(parsedValue);
+                }
+            } catch (e) {
+                console.error("Erreur lors de l'analyse de l'ID de crédit initial:", e);
+            }
+        }
+
+        if (initialCreditId) {
+            fetchCreditDetails(initialCreditId).then(data => {
+                if (data.success) {
+                    currentCreditDetails = data;
+                    updateCreditInfoDisplay(data);
+                    updateFormState(true);
+                    updateRepaymentBreakdown();
+                    fetchAndRenderHistorique(initialCreditId);
+                } else {
+                    resetInfosAndForm();
+                }
+            });
+        } else {
+            resetInfosAndForm(); // Assurez-vous que le formulaire est désactivé si aucun crédit initial
+        }
+
+
+        // --- Gestion de la recherche de crédits ---
+        let searchTimeout;
+        creditSearchInput.addEventListener('keyup', function () {
+            clearTimeout(searchTimeout);
+            const query = this.value;
+            if (query.length > 2) {
+                searchTimeout = setTimeout(() => {
+                    searchCredits(query);
+                }, 300);
+            } else {
+                creditSearchResults.innerHTML = '';
+                creditSearchResults.classList.add('hidden');
+                noResultsMsg.classList.add('hidden');
+            }
+        });
+
+        // Cacher les résultats si l'utilisateur clique en dehors
+        document.addEventListener('click', function (event) {
+            if (!creditSearchResults.contains(event.target) && event.target !== creditSearchInput) {
+                creditSearchResults.classList.add('hidden');
+                noResultsMsg.classList.add('hidden');
+            }
+        });
+
+        function searchCredits(query) {
+            fetch(`/microfinance/credits/search_ajax/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayCreditResults(data);
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la recherche de crédits:', error);
+                    creditSearchResults.innerHTML = '<p class="p-2 text-sm text-red-600">Erreur de chargement des crédits.</p>';
+                    creditSearchResults.classList.remove('hidden');
+                    noResultsMsg.classList.add('hidden');
+                });
+        }
+
+        function displayCreditResults(credits) {
+            creditSearchResults.innerHTML = '';
+            if (credits.length > 0) {
+                credits.forEach((credit, index) => {
+                    const div = document.createElement('div');
+                    div.classList.add('p-2', 'cursor-pointer', 'hover:bg-blue-100', 'text-sm', 'rounded-md');
+                    div.textContent = `${credit.numero_credit} (${credit.client_full_name} - Reste dû: ${formatCurrency(parseFloat(credit.remaining_total_due))})`;
+                    div.dataset.creditId = credit.id;
+                    div.setAttribute('role', 'option');
+                    div.setAttribute('tabindex', '-1'); // Make options focusable
+
+                    if (index === 0) { // Set first item as active for keyboard nav
+                        div.setAttribute('aria-selected', 'true');
+                        div.tabIndex = 0;
+                    }
+
+                    div.addEventListener('click', () => selectCredit(credit.id));
+                    creditSearchResults.appendChild(div);
+                });
+                creditSearchResults.classList.remove('hidden');
+                noResultsMsg.classList.add('hidden');
+            } else {
+                creditSearchResults.classList.add('hidden');
+                noResultsMsg.classList.remove('hidden');
+            }
+        }
+
+        // Keyboard navigation for search results
+        creditSearchInput.addEventListener('keydown', function (e) {
+            const focusableOptions = [...creditSearchResults.querySelectorAll('[role="option"]')];
+            if (!focusableOptions.length) return;
+
+            let currentIndex = focusableOptions.findIndex(li => li === document.activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentIndex < focusableOptions.length - 1) {
+                    focusableOptions[currentIndex + 1].focus();
+                } else {
+                    focusableOptions[0].focus(); // Wrap around
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    focusableOptions[currentIndex - 1].focus();
+                } else {
+                    focusableOptions[focusableOptions.length - 1].focus(); // Wrap around
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (document.activeElement && document.activeElement.dataset.creditId) {
+                    selectCredit(document.activeElement.dataset.creditId);
+                    creditSearchInput.focus(); // Return focus to search input
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                creditSearchResults.classList.add('hidden');
+                noResultsMsg.classList.add('hidden');
+                creditSearchInput.focus();
+            }
+        });
+
+        async function selectCredit(creditId) {
+            creditSearchResults.classList.add('hidden');
+            noResultsMsg.classList.add('hidden');
+
+            const data = await fetchCreditDetails(creditId);
+            if (data.success) {
+                currentCreditDetails = data;
+                creditHiddenInput.value = creditId;
+                creditSearchInput.value = data.credit_display;
+                updateCreditInfoDisplay(data);
+                updateFormState(true);
+                updateRepaymentBreakdown(); // Update breakdown immediately after credit selection
+                fetchAndRenderHistorique(creditId);
+                montantInput.focus(); // Focus on amount input after selection
+            } else {
+                console.error("Failed to select credit:", data.message);
+                resetInfosAndForm();
+                alert("Impossible de charger les détails du crédit. Veuillez réessayer.");
+            }
+        }
+
+        // Fonction pour récupérer les détails d'un crédit via AJAX
+        async function fetchCreditDetails(creditId) {
+            try {
+                const response = await fetch(`{%url 'get_credit_details_ajax' %}?credit_id=${encodeURIComponent(creditId)}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Erreur lors du chargement des détails du crédit:', error);
+                return { success: false, message: 'Erreur de chargement des détails du crédit.' };
+            }
+        }
+
+        // Fonction pour mettre à jour l'affichage des informations du crédit
+        function updateCreditInfoDisplay(details) {
+            infoCreditNum.textContent = details.numero_credit || '--';
+            clientNameText.textContent = details.client_full_name || '--';
+            infoCreditAmount.textContent = formatCurrency(parseFloat(details.montant_credit || 0));
+            infoInterestRate.textContent = details.taux_interet ? `${parseFloat(details.taux_interet).toFixed(2)}% / an` : '--';
+            infoDuration.textContent = details.duree_credit ? `${details.duree_credit} mois` : '--';
+
+            const montantTotal = parseFloat(details.montant_credit || 0);
+            const rembourse = parseFloat(details.total_rembourse || 0);
+            let progressPercent = (montantTotal > 0) ? (rembourse / montantTotal) * 100 : 0;
+            if (progressPercent > 100) progressPercent = 100; // Cap at 100%
+            progressBar.style.width = progressPercent + "%";
+            progressBar.textContent = `Remboursé ${progressPercent.toFixed(0)}%`;
+            progressBarTotal.textContent = formatCurrency(montantTotal);
+
+
+            const remainingTotalDue = parseFloat(details.remaining_total_due || 0);
+            remainingAmountDisplay.textContent = formatCurrency(remainingTotalDue);
+
+            // Set max amount for the repayment input
+            montantInput.max = remainingTotalDue;
+            maxMontantText.textContent = `Maximum: ${formatCurrency(remainingTotalDue)}`;
+        }
+
+
+        // Fonction pour activer/désactiver les champs du formulaire de remboursement
+        function updateFormState(enabled) {
+            montantInput.disabled = !enabled;
+            // datePaiementInput.disabled = !enabled; // Django's DateInput usually handles its own disabled state
+            methodePaiementSelect.disabled = !enabled;
+            referenceInput.disabled = !enabled;
+            notesInput.disabled = !enabled;
+            submitBtn.disabled = !enabled;
+
+            // Clear montant input if disabled
+            if (!enabled) {
+                montantInput.value = '';
+            }
+        }
+
+        // Réinitialiser toutes les informations et le formulaire
+        function resetInfosAndForm() {
+            currentCreditDetails = null;
+            creditSearchInput.value = '';
+            creditHiddenInput.value = '';
+            infoCreditNum.textContent = '--';
+            clientNameText.textContent = '--';
+            infoCreditAmount.textContent = '-- FCFA';
+            infoInterestRate.textContent = '--';
+            infoDuration.textContent = '--';
+            progressBar.style.width = '0%';
+            progressBar.textContent = 'Remboursé 0%';
+            progressBarTotal.textContent = '-- FCFA';
+            remainingAmountDisplay.textContent = '-- FCFA';
+
+            updateFormState(false); // Désactiver le formulaire
+            repaymentBreakdownDiv.innerHTML = '<p class="text-gray-500">Saisissez le montant du remboursement pour voir la répartition.</p>';
+
+            historiqueSection.hidden = true;
+            historiqueBody.innerHTML = '';
+            noHistoryMsg.classList.add('hidden');
+        }
+
+        // --- Calcul automatique de la répartition du remboursement ---
+        function updateRepaymentBreakdown() {
+            const montantRemboursement = parseFloat(montantInput.value) || 0;
+
+            if (!currentCreditDetails) {
+                repaymentBreakdownDiv.innerHTML = `<p class="text-gray-500">Sélectionnez un crédit pour voir la répartition.</p>`;
+                return;
+            }
+
+            const remainingPrincipal = parseFloat(currentCreditDetails.remaining_principal || 0);
+            const remainingInterest = parseFloat(currentCreditDetails.remaining_interest || 0);
+            const remainingTotalDue = parseFloat(currentCreditDetails.remaining_total_due || 0);
+
+            let partInteret = 0;
+            let partPrincipal = 0;
+            let partSurcharge = 0; // Si applicable, à ajouter dans les détails du crédit
+
+            // Logique de répartition : Intérêts d'abord, puis capital
+            if (montantRemboursement > 0) {
+                partInteret = Math.min(montantRemboursement, remainingInterest);
+                let tempRemaining = montantRemboursement - partInteret;
+                partPrincipal = Math.min(tempRemaining, remainingPrincipal);
+            }
+
+            repaymentBreakdownDiv.innerHTML = `
+                <p class="text-sm text-gray-700 font-semibold mb-2">Détails du remboursement :</p>
+                <p class="text-sm text-gray-700">Part Intérêts : <strong class="text-blue-600">${formatCurrency(partInteret)}</strong></p>
+                <p class="text-sm text-gray-700">Part Capital : <strong class="text-green-600">${formatCurrency(partPrincipal)}</strong></p>
+                <p class="text-sm text-gray-700 mt-2">Nouveau reste dû : <strong class="text-orange-600">${formatCurrency(remainingTotalDue - montantRemboursement)}</strong></p>
+            `;
+        }
+
+        montantInput.addEventListener('input', updateRepaymentBreakdown);
+
+        // --- Gestion de l'historique des remboursements ---
+        async function fetchAndRenderHistorique(creditId) {
+            try {
+                const response = await fetch(`/microfinance/credits/${encodeURIComponent(creditId)}/repayments_ajax/`);
+                const data = await response.json();
+                if (data.success && data.repayments && data.repayments.length > 0) {
+                    renderHistorique(data.repayments);
+                } else {
+                    historiqueSection.hidden = false; // Show section even if empty to display "no history" message
+                    historiqueBody.innerHTML = '';
+                    noHistoryMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement de l\'historique des remboursements:', error);
+                historiqueSection.hidden = false;
+                historiqueBody.innerHTML = '<tr><td colspan="5" class="p-2 text-center text-red-600">Erreur de chargement de l\'historique.</td></tr>';
+                noHistoryMsg.classList.add('hidden');
+            }
+        }
+
+        function renderHistorique(history) {
+            historiqueBody.innerHTML = "";
+            if (history.length === 0) {
+                historiqueSection.hidden = false;
+                noHistoryMsg.classList.remove('hidden');
+                return;
+            }
+
+            historiqueSection.hidden = false;
+            noHistoryMsg.classList.add('hidden');
+
+            history.forEach((histo) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="border border-gray-300 p-2">${new Date(histo.date_remboursement).toLocaleDateString('fr-FR')}</td>
+                    <td class="border border-gray-300 p-2 text-green-600 font-semibold">${formatCurrency(parseFloat(histo.montant))}</td>
+                    <td class="border border-gray-300 p-2">
+                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded bg-blue-200 text-blue-700 uppercase tracking-wide">
+                            ${histo.methode_paiement ? histo.methode_paiement.toUpperCase() : '-'}
+                        </span>
+                    </td>
+                    <td class="border border-gray-300 p-2 text-center">${histo.reference || "-"}</td>
+                    <td class="border border-gray-300 p-2">${histo.notes || "-"}</td>
+                `;
+                historiqueBody.appendChild(tr);
+            });
+        }
+
+
+        // Submit form handler
+        const remboursementForm = document.querySelector('form'); // Get the form element
+        remboursementForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!currentCreditDetails || !creditHiddenInput.value) {
+                alert("Veuillez sélectionner un crédit avant d'enregistrer le remboursement.");
+                return;
+            }
+
+            const montantVal = parseFloat(montantInput.value);
+            const maxVal = parseFloat(montantInput.max); // Use the max attribute set dynamically
+            if (isNaN(montantVal) || montantVal <= 0) {
+                alert("Le montant doit être un nombre positif.");
+                return;
+            }
+            if (montantVal > maxVal) {
+                alert(`Le montant ne peut pas dépasser le reste dû: ${formatCurrency(maxVal)}.`);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            loadingIcon.style.display = "inline-block"; // Show loading icon
+            submitBtn.querySelector('svg:first-child').style.display = 'none'; // Hide check icon
+
+
+            try {
+                const formData = new FormData(remboursementForm);
+                // Ensure the 'credit' field uses the ID from the hidden input
+                formData.set('credit', creditHiddenInput.value);
+
+                const response = await fetch(remboursementForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    // Django's CSRF token is handled by crispy-forms and included in formData
+                });
+
+                const data = await response.json(); // Assuming JSON response from Django view
+
+                if (response.ok && data.success) {
+                    alert("Remboursement enregistré avec succès !");
+                    // Re-fetch credit details and history to update UI
+                    const updatedCreditDetails = await fetchCreditDetails(currentCreditDetails.id);
+                    if (updatedCreditDetails.success) {
+                        currentCreditDetails = updatedCreditDetails; // Update global details
+                        updateCreditInfoDisplay(currentCreditDetails);
+                        updateRepaymentBreakdown();
+                    }
+                    await fetchAndRenderHistorique(currentCreditDetails.id);
+
+                    // Reset form fields after successful submission
+                    montantInput.value = '';
+                    // datePaiementInput.value = new Date().toISOString().split('T')[0]; // Keep current date
+                    methodePaiementSelect.value = methodePaiementSelect.options[0].value; // Reset to first option
+                    referenceInput.value = '';
+                    notesInput.value = '';
+                    updateFormState(true); // Keep form enabled if a credit is still selected
+                } else {
+                    alert(`Erreur lors de l'enregistrement: ${data.message || 'Une erreur est survenue.'}`);
+                    if (data.errors) {
+                        // Display field-specific errors if returned by Django
+                        console.error("Form errors:", data.errors);
+                        // You could loop through data.errors and display them under specific fields
+                        // For example, if data.errors has {'montant': ['Invalid value']}
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur réseau ou du serveur:', error);
+                alert("Une erreur de communication est survenue. Veuillez vérifier votre connexion.");
+            } finally {
+                submitBtn.disabled = false;
+                loadingIcon.style.display = "none"; // Hide loading icon
+                submitBtn.querySelector('svg:first-child').style.display = 'inline-block'; // Show check icon again
+            }
+        });
+
+        // Initialize form fields to disabled state initially
+        resetInfosAndForm();
+    });
+</script>
+
+{%endblock%}

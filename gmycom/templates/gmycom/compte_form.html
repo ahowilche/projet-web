@@ -1,0 +1,233 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+        {% if client_instance %}
+        <a href="{% url 'client_detail' client_instance.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Retour à la fiche client
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8">
+        {# Display Django messages #}
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="rounded-md p-3 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {# Client Field with Autocomplete #}
+            <div>
+                <label for="client-search-input" class="block text-sm font-medium text-gray-700">Client</label>
+                <div class="mt-1 relative">
+                    {% if client_instance %}
+                        {# If client is already selected (from client page), display name read-only #}
+                        <p class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-900 sm:text-sm">
+                            {{ client_instance.prenom }} {{ client_instance.nom }} (CNI: {{ client_instance.numero_cni|default:"N/A" }})
+                        </p>
+                        {# Hidden field to send client ID with form #}
+                        <input type="hidden" name="client_id_hidden" id="client-id-hidden" value="{{ client_instance.pk }}">
+                    {% else %}
+                        {# Otherwise, display the search field with autocomplete #}
+                        <input type="text" id="client-search-input" placeholder="Rechercher un client par nom, email, téléphone..." {# MODIFIÉ ICI #}
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                               autocomplete="off"> {# Disable browser autocomplete #}
+                        
+                        {# Hidden input to store selected client ID, sent with form #}
+                        <input type="hidden" name="client_id_hidden" id="client-id-hidden" value="">
+                        
+                        {# Area to display search results #}
+                        <div id="client-search-results" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto hidden">
+                            {# Results will be inserted here by JavaScript #}
+                        </div>
+                        
+                        {# Button to clear selection (optional) #}
+                        <button type="button" id="clear-client-selection" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden" title="Effacer la sélection">
+                            <svg class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+
+                    {% endif %}
+                </div>
+                {# Display errors for client field (requires slight adaptation if you have specific non-global errors) #}
+                {% if form.client.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.client.errors }}</p>
+                {% endif %}
+            </div>
+
+            {# Account Type Field #}
+            <div>
+                <label for="{{ form.type_compte.id_for_label }}" class="block text-sm font-medium text-gray-700">Type de Compte</label>
+                <div class="mt-1">
+                    {{ form.type_compte }}
+                </div>
+                {% if form.type_compte.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.type_compte.errors }}</p>
+                {% endif %}
+            </div>
+
+            {# Initial Balance Field #}
+            <div>
+                <label for="{{ form.solde.id_for_label }}" class="block text-sm font-medium text-gray-700">Solde Initial</label>
+                <div class="mt-1">
+                    {{ form.solde }}
+                </div>
+                {% if form.solde.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.solde.errors }}</p>
+                {% endif %}
+            </div>
+
+            {# Other form fields (excluding 'client' which is handled above) #}
+            {% for field in form %}
+                {% if field.name != 'client' and field.name != 'type_compte' and field.name != 'solde' %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                        <div class="mt-1">
+                            {{ field }}
+                        </div>
+                        {% if field.help_text %}
+                            <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ field.errors }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {# Submit button #}
+            <div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Ouvrir le Compte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply default Tailwind classes to Django form fields
+        const applyTailwindClasses = () => {
+            const inputs = document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea');
+            inputs.forEach(input => {
+                // Avoid reapplying to inputs already styled by the search script
+                if (input.id !== 'client-search-input') { 
+                    input.classList.add(
+                        'appearance-none', 'block', 'w-full', 'px-3', 'py-2',
+                        'border', 'border-gray-300', 'rounded-md', 'shadow-sm',
+                        'placeholder-gray-400', 'focus:outline-none', 'focus:ring-blue-500',
+                        'focus:border-blue-500', 'sm:text-sm'
+                    );
+                }
+            });
+
+            const checkboxes = document.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+            checkboxes.forEach(input => {
+                input.classList.add('h-4', 'w-4', 'text-blue-600', 'border-gray-300', 'rounded');
+            });
+        };
+        
+        applyTailwindClasses(); // Apply on initial load
+
+
+        // --- Client Autocomplete Logic ---
+        const clientSearchInput = document.getElementById('client-search-input');
+        const clientIdHiddenInput = document.getElementById('client-id-hidden');
+        const clientSearchResults = document.getElementById('client-search-results');
+        const clearClientSelectionBtn = document.getElementById('clear-client-selection');
+
+        let searchTimeout;
+
+        // Function to hide search results
+        const hideSearchResults = () => {
+            clientSearchResults.classList.add('hidden');
+        };
+
+        // Handle input in the search field
+        if (clientSearchInput) { // Ensure the element exists (not in pre-filled mode)
+            clientSearchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (query.length < 2) { // Start search after 2 characters
+                    hideSearchResults();
+                    return;
+                }
+
+                // Cancel previous timeout to avoid multiple rapid requests
+                clearTimeout(searchTimeout);
+
+                searchTimeout = setTimeout(() => {
+                    // Perform AJAX request
+                    fetch(`{% url 'search_clients_ajax' %}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            clientSearchResults.innerHTML = ''; // Clear previous results
+                            if (data.length > 0) {
+                                data.forEach(client => {
+                                    const div = document.createElement('div');
+                                    div.classList.add('px-4', 'py-2', 'cursor-pointer', 'hover:bg-gray-100', 'text-gray-800');
+                                    div.textContent = client.text;
+                                    div.dataset.clientId = client.id;
+                                    div.addEventListener('click', function() {
+                                        clientSearchInput.value = client.text;
+                                        clientIdHiddenInput.value = client.id;
+                                        hideSearchResults();
+                                        clearClientSelectionBtn.classList.remove('hidden'); // Show clear button
+                                    });
+                                    clientSearchResults.appendChild(div);
+                                });
+                                clientSearchResults.classList.remove('hidden'); // Show results
+                            } else {
+                                const div = document.createElement('div');
+                                div.classList.add('px-4', 'py-2', 'text-gray-500', 'italic');
+                                div.textContent = 'Aucun client trouvé.';
+                                clientSearchResults.appendChild(div);
+                                clientSearchResults.classList.remove('hidden');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Client search error:', error);
+                            hideSearchResults();
+                        });
+                }, 300); // 300ms delay after last keystroke
+            });
+
+            // Handle click outside results to hide them
+            document.addEventListener('click', (event) => {
+                if (!clientSearchInput.contains(event.target) && !clientSearchResults.contains(event.target)) {
+                    hideSearchResults();
+                }
+            });
+
+            // Handle clear selection button
+            if (clearClientSelectionBtn) {
+                clearClientSelectionBtn.addEventListener('click', () => {
+                    clientSearchInput.value = '';
+                    clientIdHiddenInput.value = '';
+                    hideSearchResults();
+                    clearClientSelectionBtn.classList.add('hidden'); // Hide clear button
+                    clientSearchInput.focus(); // Set focus back to facilitate new search
+                });
+            }
+
+            // Initialize clear button state if a client is already selected (e.g., if form validation failed)
+            if (clientIdHiddenInput.value && clientSearchInput.value) {
+                clearClientSelectionBtn.classList.remove('hidden');
+            }
+        }
+    });
+</script>
+{%endblock%}

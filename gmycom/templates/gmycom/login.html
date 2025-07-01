@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMyCom - Espace Agent</title>
+    <!-- Chargement de Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        /* Styles pour les messages Django */
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+        .alert-success {
+            background-color: #dcfce7; /* green-100 */
+            color: #166534; /* green-800 */
+        }
+        .alert-error {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+        }
+        .alert-warning {
+            background-color: #fffbeb; /* yellow-100 */
+            color: #92400e; /* yellow-800 */
+        }
+        .alert-info {
+            background-color: #e0f2fe; /* blue-100 */
+            color: #1e40af; /* blue-800 */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gray-100 text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-cyan-500 text-white font-bold text-lg select-none">
+                    G
+                </div>
+                <h1 class="text-xl font-bold text-gray-900">GMyCom</h1>
+            </div>
+            <div class="text-sm font-semibold text-gray-600">
+                Espace Agent
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row bg-white rounded-lg shadow-xl overflow-hidden max-w-4xl w-full">
+            <!-- Left Side - Decorative Area -->
+            <div class="lg:w-1/2 p-8 bg-gradient-to-br from-blue-600 to-cyan-500 text-white flex flex-col justify-center items-center relative overflow-hidden rounded-l-lg lg:rounded-r-none rounded-t-lg lg:rounded-t-none">
+                <div class="z-10 text-center">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight mb-4">Connexion</h1>
+                    <h2 class="text-lg sm:text-xl font-semibold mb-6">
+                        <span class="text-blue-200">Agent</span>
+                        <span class="text-cyan-200">GMyCom</span>
+                    </h2>
+                    <p class="text-blue-100 max-w-sm mx-auto text-sm sm:text-base">
+                        Accédez à votre espace de travail pour gérer vos clients et opérations de microfinance.
+                    </p>
+                </div>
+
+                <!-- Decorative Background Elements -->
+                <div class="absolute inset-0 z-0 opacity-20">
+                    <div class="absolute -top-1/4 -left-1/4 w-96 h-96 bg-white rounded-full mix-blend-overlay animate-pulse-slow"></div>
+                    <div class="absolute -bottom-1/4 -right-1/4 w-80 h-80 bg-white rounded-full mix-blend-overlay animate-pulse-slow delay-200"></div>
+                </div>
+
+                <!-- Interface Card -->
+                <div class="z-10 mt-8 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-lg p-5 shadow-lg max-w-xs w-full">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-shrink-0 p-3 bg-white bg-opacity-30 rounded-full">
+                            <!-- Users Icon SVG -->
+                            <svg class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold">Interface Agent</h3>
+                            <p class="text-sm text-blue-100">Gestion complète et intuitive</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="lg:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900">Se connecter</h3>
+                    <p class="text-gray-500 text-sm mt-1">Accédez à votre espace agent</p>
+                </div>
+
+                <!-- Messages Django -->
+                {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <div>
+                        <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.username.label }}
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <ul class="text-red-600 text-sm mt-1">
+                                {% for error in form.username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.password.label }}
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <ul class="text-red-600 text-sm mt-1">
+                                {% for error in form.password.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center text-gray-600">
+                            <input type="checkbox" name="remember" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="ml-2">Se souvenir de moi</span>
+                        </label>
+                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Mot de passe oublié ?</a>
+                    </div>
+
+                    <button type="submit" class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                        <span>Se connecter</span>
+                        <svg class="ml-2 -mr-1 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M13.025 1l-2.847 2.828 6.176 6.176h-16.354v3.992h16.354l-6.176 6.176 2.847 2.828 10.975-11z"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-4 mt-auto">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-sm">
+            <div class="flex items-center space-x-3 mb-2 sm:mb-0">
+                <div class="w-6 h-6 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-400 to-cyan-300 text-white font-bold text-sm select-none">
+                    G
+                </div>
+                <span class="font-semibold text-lg">GMyCom</span>
+            </div>
+            <div class="text-gray-400">
+                © 2024 GMyCom. Tous droits réservés.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

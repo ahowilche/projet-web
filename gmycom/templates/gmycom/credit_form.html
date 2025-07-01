@@ -1,0 +1,279 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+{% load widget_tweaks %} {# Load widget_tweaks for the 'attr' filter #}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="px-6 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-semibold text-gray-900">{{ title }}</h2>
+        <a href="{% url 'credit_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Retour à la liste des crédits
+        </a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="relative">
+                <label for="account-search-input" class="block text-sm font-medium text-gray-700 mb-1">
+                    Compte de Prélèvement (rechercher un client ou un numéro de compte)
+                </label>
+                <input type="text" id="account-search-input" class="form-input" placeholder="Nom, prénom, email ou n° de compte..." autocomplete="off">
+                
+                {# Hidden fields for form submission #}
+                <input type="hidden" name="{{ form.compte.name }}" id="{{ form.compte.id_for_label }}" value="{{ form.compte.value|default:'' }}">
+                <input type="hidden" name="{{ form.client.name }}" id="{{ form.client.id_for_label }}" value="{{ form.client.value|default:'' }}">
+
+                {% if form.compte.errors %}
+                    {% for error in form.compte.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+                {% if form.client.errors %}
+                    {% for error in form.client.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+
+                <div id="account-search-results" class="absolute z-10 bg-white border border-gray-300 rounded-md shadow w-full max-h-60 overflow-y-auto mt-1 hidden"></div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.amount_granted.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Montant Accordé</label>
+                    {% render_field form.amount_granted class="form-input" oninput="updateCreditSummary()" %}
+                    {% if form.amount_granted.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.amount_granted.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.amount_granted.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label for="{{ form.interest_rate.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Taux d'Intérêt Annuel (%)</label>
+                    {% render_field form.interest_rate class="form-input" oninput="updateCreditSummary()" %}
+                    {% if form.interest_rate.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.interest_rate.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.interest_rate.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.duree_mois.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Durée (en mois)</label>
+                    {% render_field form.duree_mois class="form-input" oninput="updateCreditSummary(); updateDueDate()" %}
+                    {% if form.duree_mois.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.duree_mois.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.duree_mois.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Date d'Échéance</label>
+                    {% render_field form.due_date class="form-input" %}
+                    {% if form.due_date.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.due_date.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.due_date.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div id="credit-summary" class="bg-gray-50 p-3 rounded-md mt-4 text-sm">
+                </div>
+
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Erreur(s) :</strong>
+                    <ul class="list-disc ml-5">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Enregistrer le crédit
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Styles généraux pour les champs de formulaire (basés sur form-control) */
+    .form-input, .form-select, .form-textarea {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem; /* rounded-md */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        border-color: #3b82f6; /* blue-500 */
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25); /* focus:ring-blue-500 avec opacité */
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('account-search-input');
+    const searchResults = document.getElementById('account-search-results');
+    const hiddenCompte = document.getElementById('{{ form.compte.id_for_label }}');
+    const hiddenClient = document.getElementById('{{ form.client.id_for_label }}');
+
+    // Credit calculation fields
+    const amountGrantedInput = document.getElementById('{{ form.amount_granted.id_for_label }}');
+    const interestRateInput = document.getElementById('{{ form.interest_rate.id_for_label }}');
+    const dureeMoisInput = document.getElementById('{{ form.duree_mois.id_for_label }}');
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+
+
+    let debounceTimeout;
+
+    // --- Initial Load for Edit Mode ---
+    const initialAccountId = hiddenCompte.value;
+    if (initialAccountId) {
+        fetch(`/microfinance/ajax/get-compte-details/?account_id=${encodeURIComponent(initialAccountId)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    searchInput.value = data.affichage;
+                    // hiddenClient.value = data.client_id; // This is already set by Django if passed from view
+                }
+            })
+            .catch(error => console.error('Erreur lors du chargement des détails du compte initial:', error));
+    }
+    // --- End Initial Load ---
+
+    // --- Account Search Logic ---
+    searchInput.addEventListener('input', function () {
+        const query = this.value.trim();
+        clearTimeout(debounceTimeout);
+        if (query.length >= 2) {
+            debounceTimeout = setTimeout(() => {
+                searchResults.innerHTML = '<div class="text-center py-2 text-gray-500">Recherche...</div>';
+                searchResults.classList.remove('hidden');
+                fetch(`/microfinance/ajax/search-comptes/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+.then(data => {
+    searchResults.innerHTML = '';
+    if (data.length > 0) {
+        data.forEach(compte => {
+            const div = document.createElement('div');
+            div.className = 'p-2 hover:bg-gray-100 cursor-pointer text-sm';
+            div.textContent = compte.affichage;
+            div.dataset.id = compte.id;
+            div.dataset.client_id = compte.client_id;
+
+            div.addEventListener('click', () => {
+                if (!compte.client_id) {
+                    alert("Ce compte ne contient pas d'information client.");
+                    return;
+                }
+
+                searchInput.value = compte.affichage;
+                hiddenCompte.value = compte.id;
+                hiddenClient.value = compte.client_id;
+                searchResults.classList.add('hidden');
+            });
+
+            searchResults.appendChild(div);
+        });
+    } else {
+        searchResults.innerHTML = '<div class="text-center py-2 text-gray-500">Aucun résultat trouvé</div>';
+    }
+})
+
+                    .catch(error => {
+                        console.error("Erreur recherche comptes:", error);
+                        searchResults.innerHTML = '<div class="text-center py-2 text-red-500">Erreur réseau</div>';
+                    });
+            }, 300);
+        } else {
+            searchResults.classList.add('hidden');
+            searchResults.innerHTML = '';
+            // If the search input is cleared, also clear the hidden account and client IDs
+            hiddenCompte.value = '';
+            hiddenClient.value = '';
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchResults.contains(e.target) && e.target !== searchInput) {
+            searchResults.classList.add('hidden');
+        }
+    });
+
+    // --- Credit Calculation Logic ---
+    function updateCreditSummary() {
+        const montant = parseFloat(amountGrantedInput.value) || 0;
+        const taux = parseFloat(interestRateInput.value) || 0;
+        const duree = parseInt(dureeMoisInput.value) || 0;
+
+        // Simple interest calculation: Principal * Rate * Time / 100
+        // Time is in years, so duree_mois / 12
+        const interet = (montant * taux * duree) / (12 * 100);
+        const total = montant + interet;
+
+        document.getElementById('credit-summary').innerHTML = `
+            <p class="text-sm text-gray-700">
+                Intérêt estimé : <strong>${interet.toFixed(2)} XOF</strong><br>
+                Total à rembourser : <strong>${total.toFixed(2)} XOF</strong>
+            </p>`;
+    }
+
+    function updateDueDate() {
+        const duree = parseInt(dureeMoisInput.value);
+        if (!duree || duree < 0) { // Handle invalid or negative duration
+            dueDateInput.value = '';
+            return;
+        }
+
+        const now = new Date();
+        // Create a new date object from current date to avoid modifying it
+        const calculatedDueDate = new Date(now.getFullYear(), now.getMonth() + duree, now.getDate());
+        
+        // Format ISO YYYY-MM-DD
+        const year = calculatedDueDate.getFullYear();
+        const month = (calculatedDueDate.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+        const day = calculatedDueDate.getDate().toString().padStart(2, '0');
+        
+        dueDateInput.value = `${year}-${month}-${day}`;
+    }
+
+    // Attach listeners and run calculations on page load
+    amountGrantedInput.addEventListener('input', updateCreditSummary);
+    interestRateInput.addEventListener('input', updateCreditSummary);
+    dureeMoisInput.addEventListener('input', () => {
+        updateCreditSummary();
+        updateDueDate();
+    });
+
+    // Initial calculations on page load (important for edit mode or pre-filled forms)
+    updateCreditSummary();
+    updateDueDate();
+});
+</script>
+{% endblock %}

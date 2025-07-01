@@ -1,0 +1,205 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Rapport Financier Global et Analyses{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Rapport Financier Global et Analyses</h1>
+        <div class="flex flex-wrap items-center gap-3">
+            <button onclick="exportGeneralReport()" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Exporter le rapport
+            </button>
+        </div>
+    </div>
+
+    <section class="mb-8 p-6 bg-white rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Indicateurs Clés de Performance (KPIs)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                <p class="text-sm text-blue-700 font-medium">Total Dépôts</p>
+                <p class="text-2xl font-bold text-blue-900 mt-1">{{ global_stats.total_deposits|floatformat:0|intcomma }} F CFA</p>
+            </div>
+            <div class="bg-red-50 p-4 rounded-lg shadow-sm border border-red-200">
+                <p class="text-sm text-red-700 font-medium">Total Retraits</p>
+                <p class="text-2xl font-bold text-red-900 mt-1">{{ global_stats.total_withdrawals|floatformat:0|intcomma }} F CFA</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                <p class="text-sm text-green-700 font-medium">Crédits Remboursés (Count)</p>
+                <p class="text-2xl font-bold text-green-900 mt-1">{{ global_stats.repaid_credits_count }}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+                <p class="text-sm text-purple-700 font-medium">Crédits en Cours (Montant)</p>
+                <p class="text-2xl font-bold text-purple-900 mt-1">{{ global_stats.active_credits_amount|floatformat:0|intcomma }} F CFA</p>
+            </div>
+            </div>
+    </section>
+
+    <section class="mb-8 p-6 bg-white rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Graphiques d'Analyse Globale</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="chart-container bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">Évolution Mensuelle des Dépôts et Retraits</h3>
+                <canvas id="monthlyFlowChart"></canvas>
+            </div>
+            <div class="chart-container bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">Répartition des Crédits par Statut</h3>
+                <canvas id="globalCreditStatusChart"></canvas>
+            </div>
+            <div class="chart-container bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">Top 5 Clients par Solde</h3>
+                <canvas id="topClientsBalanceChart"></canvas>
+            </div>
+            <div class="chart-container bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-medium text-gray-700 mb-3">Répartition des Soldes par Type de Compte</h3>
+                <canvas id="accountTypeBalanceChart"></canvas>
+            </div>
+            </div>
+    </section>
+
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Données d'exemple pour le rapport général (viendront de votre backend Django)
+        // Vous remplacerez ces données statiques par les données dynamiques passées par Django.
+        const monthlyFlowData = {
+            labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+            datasets: [
+                {
+                    label: 'Dépôts',
+                    data: [100000, 120000, 90000, 150000, 110000, 130000],
+                    borderColor: 'rgb(34, 197, 94)', // green-500
+                    fill: false,
+                    tension: 0.3
+                },
+                {
+                    label: 'Retraits',
+                    data: [30000, 45000, 25000, 50000, 35000, 40000],
+                    borderColor: 'rgb(239, 68, 68)', // red-500
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        };
+
+        const globalCreditStatusData = {
+            labels: ['En Cours', 'Remboursés', 'En Retard', 'Annulés'],
+            datasets: [{
+                data: [40, 50, 8, 2],
+                backgroundColor: [
+                    'rgb(245, 158, 11)', // orange
+                    'rgb(34, 197, 94)', // green
+                    'rgb(239, 68, 68)', // red
+                    'rgb(107, 114, 128)' // gray
+                ],
+                hoverOffset: 4
+            }]
+        };
+
+        const topClientsBalanceData = {
+            labels: ['Client A', 'Client B', 'Client C', 'Client D', 'Client E'],
+            datasets: [{
+                label: 'Solde (F CFA)',
+                data: [250000, 200000, 180000, 150000, 130000],
+                backgroundColor: 'rgb(59, 130, 246)', // blue-500
+            }]
+        };
+
+        const accountTypeBalanceData = {
+            labels: ['Comptes Courants', 'Comptes Épargne', 'Comptes Bloqués'],
+            datasets: [{
+                data: [70, 25, 5],
+                backgroundColor: [
+                    'rgb(79, 70, 229)', // indigo
+                    'rgb(20, 184, 166)', // teal
+                    'rgb(249, 115, 22)' // orange
+                ],
+                hoverOffset: 4
+            }]
+        };
+
+
+        // Création des graphiques
+        new Chart(document.getElementById('monthlyFlowChart'), {
+            type: 'line',
+            data: monthlyFlowData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false,
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('globalCreditStatusChart'), {
+            type: 'pie',
+            data: globalCreditStatusData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false,
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('topClientsBalanceChart'), {
+            type: 'bar',
+            data: topClientsBalanceData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    title: {
+                        display: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('accountTypeBalanceChart'), {
+            type: 'doughnut',
+            data: accountTypeBalanceData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false,
+                    }
+                }
+            }
+        });
+    });
+
+    // Fonction d'exportation (à implémenter côté backend)
+    function exportGeneralReport() {
+        alert("La fonctionnalité d'exportation de ce rapport général est en cours de développement. Elle générera un PDF ou Excel avec toutes les analyses statistiques.");
+        // Ici, vous ferez un appel AJAX ou redirigerez vers une URL Django qui générera le rapport avec les graphiques.
+        // Par exemple: window.location.href = "";
+    }
+</script>
+{% endblock %}

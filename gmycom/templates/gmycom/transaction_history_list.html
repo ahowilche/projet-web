@@ -1,0 +1,399 @@
+<!-- microfinance_project/gmycom/transaction_history_list.html -->
+{% extends 'gmycom/base.html' %}
+{% load humanize %}
+
+{% block title %}Historique des Transactions{% endblock %}
+
+{% block content %}
+
+<div class="px-4 py-6 sm:px-6 lg:px-8">
+
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-semibold text-gray-900">Historique des Transactions</h2>
+        <a href="{% url 'mouvement_create' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-md">
+            <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3L4 7l4 4m-4 0h16a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 012-2z"></path></svg>
+            Enregistrer un mouvement
+        </a>
+    </div>
+
+    <section aria-label="Résumé des statistiques" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm mb-6">
+        <div class="bg-white p-4 rounded-lg shadow">
+            <p class="text-2xl font-semibold text-gray-900">{{ total_transactions|intcomma }}</p>
+            <p class="text-gray-500">Total Transactions</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <p class="text-2xl font-semibold text-green-600">+{{ total_deposits|floatformat:2|intcomma }} XOF</p>
+            <p class="text-gray-500">Total Dépôts</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <p class="text-2xl font-semibold text-red-600">-{{ total_withdrawals|floatformat:2|intcomma }} XOF</p>
+            <p class="text-gray-500">Total Retraits</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+            <p class="text-2xl font-semibold {% if net_balance >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ net_balance|floatformat:2|intcomma }} XOF</p>
+            <p class="text-gray-500">Solde Net Global</p>
+        </div>
+    </section>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="p-6">
+            <!-- Filter Form -->
+            <form method="GET" action="{% url 'transaction_history_list' %}" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 filters-container overflow-x-auto pb-4">
+                <div class="flex flex-col">
+                    <label for="start-date" class="text-xs font-medium text-gray-600 mb-1">Date de début</label>
+                    <input type="date" id="start-date" name="start_date" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ request.GET.start_date }}" />
+                </div>
+                <div class="flex flex-col">
+                    <label for="end-date" class="text-xs font-medium text-gray-600 mb-1">Date de fin</label>
+                    <input type="date" id="end-date" name="end_date" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ request.GET.end_date }}" />
+                </div>
+                <div class="flex flex-col">
+                    <label for="transaction-type" class="text-xs font-medium text-gray-600 mb-1">Type de transaction</label>
+                    <select id="transaction-type" name="type" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Tous les types</option>
+                        {% for choice_value, choice_label in transaction_types %}
+                            <option value="{{ choice_value }}" {% if request.GET.type == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="client-name" class="text-xs font-medium text-gray-600 mb-1">Client</label>
+                    <input type="text" id="client-name" name="client_name" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Nom du client..." value="{{ request.GET.client_name }}" />
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="flex flex-col">
+                        <label for="min-amount" class="text-xs font-medium text-gray-600 mb-1">Montant min</label>
+                        <input type="number" step="0.01" id="min-amount" name="min_amount" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ request.GET.min_amount|default_if_none:'' }}" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="max-amount" class="text-xs font-medium text-gray-600 mb-1">Montant max</label>
+                        <input type="number" step="0.01" id="max-amount" name="max_amount" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" value="{{ request.GET.max_amount|default_if_none:'' }}" />
+                    </div>
+                </div>
+                <div class="md:col-span-5 flex justify-end mt-2 space-x-2">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        Appliquer les filtres
+                    </button>
+                    <a href="{% url 'transaction_history_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0012 4.002v.006z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13v5h.581m-15.356-2A8.001 8.001 0 0112 20.002v.006z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20v-5m0 0l-3 3m3-3l3 3"></path></svg>
+                        Réinitialiser
+                    </a>
+                </div>
+            </form>
+
+            <div class="overflow-x-auto">
+                {% if transactions %}
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compte</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde après</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="transactions-body">
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transaction.date_operation|date:"d/m/Y H:i" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if transaction.type_operation == 'DEPOT' or transaction.type_operation == 'VIREMENT_RECU' or transaction.type_operation == 'CREDIT' %}bg-green-100 text-green-800
+                                {% elif transaction.type_operation == 'RETRAIT' or transaction.type_operation == 'VIREMENT' %}bg-red-100 text-red-800
+                                {% elif transaction.type_operation == 'REMBOURSEMENT' %}bg-blue-100 text-blue-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ transaction.get_type_operation_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ transaction.montant|floatformat:2|intcomma }} XOF
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if transaction.compte and transaction.compte.client %}
+                                    <a href="{% url 'client_detail' transaction.compte.client.pk %}" class="text-blue-600 hover:underline">
+                                        {{ transaction.compte.client.prenom }} {{ transaction.compte.client.nom }}
+                                    </a>
+                                {% elif transaction.credit and transaction.credit.client %}
+                                    <a href="{% url 'client_detail' transaction.credit.client.pk %}" class="text-blue-600 hover:underline">
+                                        {{ transaction.credit.client.prenom }} {{ transaction.credit.client.nom }}
+                                    </a>
+                                {% elif transaction.remboursement and transaction.remboursement.credit.client %}
+                                    <a href="{% url 'client_detail' transaction.remboursement.credit.client.pk %}" class="text-blue-600 hover:underline">
+                                        {{ transaction.remboursement.credit.client.prenom }} {{ transaction.remboursement.credit.client.nom }}
+                                    </a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if transaction.compte %}
+                                    <a href="{% url 'compte_detail' transaction.compte.pk %}" class="text-blue-600 hover:underline">
+                                        {{ transaction.compte.numero_compte }}
+                                    </a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title="{{ transaction.description }}">
+                                {{ transaction.description|default:"-" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {% if transaction.solde_apres is not None %}
+                                    {{ transaction.solde_apres|floatformat:2|intcomma }} XOF
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="openReceiptModal('{{ transaction.id }}')" class="text-blue-600 hover:text-blue-900 inline-flex items-center space-x-1" title="Voir le reçu">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    <span>Reçu</span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="py-12 text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun historique de transactions</h3>
+                    <p class="mt-1 text-sm text-gray-500">Commencez par enregistrer un mouvement financier.</p>
+                    <div class="mt-6">
+                        <a href="{% url 'mouvement_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            Enregistrer un mouvement
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Pagination -->
+            {% if transactions.has_other_pages %}
+            <nav class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6" aria-label="Pagination">
+                <div class="hidden sm:block">
+                    <p class="text-sm text-gray-700">
+                        Affichage de
+                        <span class="font-medium">{{ transactions.start_index }}</span>
+                        à
+                        <span class="font-medium">{{ transactions.end_index }}</span>
+                        sur
+                        <span class="font-medium">{{ transactions.paginator.count }}</span>
+                        transactions
+                    </p>
+                </div>
+                <div class="flex-1 flex justify-between sm:justify-end">
+                    {% if transactions.has_previous %}
+                        <a href="?page={{ transactions.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.client_name %}&client_name={{ request.GET.client_name }}{% endif %}{% if request.GET.min_amount %}&min_amount={{ request.GET.min_amount }}{% endif %}{% if request.GET.max_amount %}&max_amount={{ request.GET.max_amount }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Précédent</a>
+                    {% endif %}
+                    {% for i in transactions.paginator.page_range %}
+                        {% if transactions.number == i %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-500 text-sm font-medium rounded-md text-white">{{ i }}</span>
+                        {% elif i > transactions.number|add:'-3' and i < transactions.number|add:'3' %}
+                            <a href="?page={{ i }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.client_name %}&client_name={{ request.GET.client_name }}{% endif %}{% if request.GET.min_amount %}&min_amount={{ request.GET.min_amount }}{% endif %}{% if request.GET.max_amount %}&max_amount={{ request.GET.max_amount }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if transactions.has_next %}
+                        <a href="?page={{ transactions.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.client_name %}&client_name={{ request.GET.client_name }}{% endif %}{% if request.GET.min_amount %}&min_amount={{ request.GET.min_amount }}{% endif %}{% if request.GET.max_amount %}&max_amount={{ request.GET.max_amount }}{% endif %}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Suivant</a>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
+    <div class="relative p-8 bg-white w-full max-w-md mx-auto rounded-lg shadow-lg">
+        <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+            <h3 class="text-2xl font-bold text-gray-900">Reçu de Transaction</h3>
+            <button onclick="closeModal('receiptModal')" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <div id="receiptContent" class="py-6 text-gray-700 text-sm space-y-3">
+            <!-- Receipt details will be loaded here by JavaScript -->
+            <p><strong>Numéro de Transaction:</strong> <span id="receiptTxId"></span></p>
+            <p><strong>Type:</strong> <span id="receiptType"></span></p>
+            <p><strong>Montant:</strong> <span id="receiptAmount" class="font-semibold"></span></p>
+            <p><strong>Date:</strong> <span id="receiptDate"></span></p>
+            <p><strong>Client:</strong> <span id="receiptClient"></span></p>
+            <p><strong>Compte:</strong> <span id="receiptAccount"></span></p>
+            <p><strong>Description:</strong> <span id="receiptDescription"></span></p>
+            <p><strong>Solde Avant:</strong> <span id="receiptBalanceBefore"></span></p>
+            <p><strong>Solde Après:</strong> <span id="receiptBalanceAfter"></span></p>
+            <p><strong>Opéré par:</strong> <span id="receiptAgent"></span></p>
+        </div>
+        <div class="pt-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button onclick="printReceipt()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4"></path></svg>
+                Imprimer
+            </button>
+            <button onclick="closeModal('receiptModal')" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Convert Django's transactions QuerySet to a JavaScript array for easy access
+    // We're passing only the current page's transactions for the table,
+    // but for the receipt modal, we might need a more comprehensive object.
+    // For simplicity, let's assume the necessary receipt data is embedded in the initial transactions passed.
+    // If you need more data for the receipt that isn't displayed in the table,
+    // you would implement an AJAX call to a dedicated Django view for receipt details.
+    let allTransactionsData = JSON.parse('{{ transactions_json|safe }}'); // Passed from Django view
+
+    function formatCurrency(amount) {
+        if (amount === null || amount === undefined) {
+            return 'N/A';
+        }
+        // Ensure amount is a number for toLocaleString
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount)) {
+            return 'N/A';
+        }
+        return numAmount.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' });
+    }
+
+    function formatDateForReceipt(dateString) {
+        if (!dateString) return 'N/A';
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateString).toLocaleDateString('fr-FR', options);
+    }
+
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'items-center', 'justify-center');
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex', 'items-center', 'justify-center');
+        }
+    }
+
+    function openReceiptModal(transactionId) {
+        const transaction = allTransactionsData.find(tx => tx.id === parseInt(transactionId));
+
+        if (!transaction) {
+            alert("Détails de la transaction introuvables.");
+            return;
+        }
+        
+        // Populate modal content
+        document.getElementById('receiptTxId').textContent = transaction.id;
+        document.getElementById('receiptType').textContent = transaction.type_operation_display;
+        document.getElementById('receiptAmount').textContent = formatCurrency(transaction.montant);
+        document.getElementById('receiptDate').textContent = formatDateForReceipt(transaction.date_operation);
+        document.getElementById('receiptClient').textContent = transaction.client_full_name || 'N/A';
+        document.getElementById('receiptAccount').textContent = transaction.compte_numero || 'N/A';
+        document.getElementById('receiptDescription').textContent = transaction.description || 'Aucune description';
+        document.getElementById('receiptBalanceBefore').textContent = formatCurrency(transaction.solde_avant);
+        document.getElementById('receiptBalanceAfter').textContent = formatCurrency(transaction.solde_apres);
+        document.getElementById('receiptAgent').textContent = transaction.agent_username || 'N/A';
+
+
+        openModal('receiptModal');
+    }
+
+    function printReceipt() {
+        const printContents = document.getElementById('receiptContent').innerHTML;
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = `
+            <div class="p-8">
+                <h1 class="text-3xl font-bold text-center mb-6">Reçu de Transaction</h1>
+                ${printContents}
+                <div class="mt-8 text-center text-sm text-gray-500">
+                    Merci pour votre opération.
+                    <p>Imprimé le: ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+                </div>
+            </div>
+        `;
+
+        window.print();
+
+        document.body.innerHTML = originalContents;
+        window.location.reload(); // Reload to restore original page and scripts
+    }
+
+    // Close modal when clicking outside of it
+    document.getElementById('receiptModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeModal('receiptModal');
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal('receiptModal');
+        }
+    });
+
+</script>
+{% endblock %}
+
+<style>
+    /* Custom scrollbar for filters container */
+    .filters-container::-webkit-scrollbar {
+        height: 8px;
+    }
+    .filters-container::-webkit-scrollbar-thumb {
+        background: #6b7280; /* Gray-500 */
+        border-radius: 10px;
+    }
+    .filters-container::-webkit-scrollbar-track {
+        background: #f3f4f6; /* gray-100 */
+    }
+    /* Table styles */
+    table {
+        border-collapse: separate;
+        border-spacing: 0 0.75rem;
+        width: 100%;
+    }
+    thead tr th {
+        font-weight: 600;
+        text-align: left;
+        padding-bottom: 0.5rem;
+        color: #374151; /* gray-700 */
+        font-size: 0.875rem;
+    }
+    tbody tr {
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Adjusted shadow for subtlety */
+        border-radius: 0.5rem; /* Rounded corners for rows */
+    }
+    tbody tr td {
+        padding: 0.75rem 1rem;
+        border-top: 0 solid transparent;
+        font-size: 0.875rem;
+        color: #4b5563; /* gray-600 */
+    }
+    /* Apply border-radius to the first and last cells of each row for visual consistency */
+    tbody tr td:first-child {
+        border-top-left-radius: 0.5rem;
+        border-bottom-left-radius: 0.5rem;
+    }
+    tbody tr td:last-child {
+        border-top-right-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
+    }
+    /* Scroll container for table on small screens */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+</style>

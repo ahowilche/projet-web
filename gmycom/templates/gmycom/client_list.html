@@ -1,0 +1,263 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Liste des Clients{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 flex-grow overflow-auto">
+
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Liste des Clients</h1>
+        <a href="{% url 'client_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Ajouter un nouveau client
+        </a>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8 mb-6">
+        <form method="get" class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div class="flex-grow w-full sm:w-auto">
+                <label for="search-query" class="sr-only">Rechercher</label>
+                <input type="text" name="q" id="search-query" value="{{ query|default_if_none:'' }}" placeholder="Rechercher par nom, prénom, téléphone, profession, revenu..."
+                       class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto">
+                <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                Rechercher
+            </button>
+            {% if query %}
+            <a href="{% url 'client_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto">
+                Effacer
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto"> {# Cette classe permet le défilement horizontal si le contenu déborde #}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Photo
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nom & Prénom
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Téléphone & Email
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Adresse
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Profession & Revenu
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Statut Client
+                    </th>
+                    {% if request.user.is_superuser %}
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Agent Enregistreur
+                    </th>
+                    {% endif %}
+                    {# Colonne Date d'inscription supprimée #}
+                    <th scope="col" class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% if clients %}
+                    {% for client in clients %}
+                    <tr>
+                        <td class="px-6 py-4"> {# whitespace-nowrap retiré pour permettre au contenu de s'adapter si la taille de l'écran est réduite #}
+                            <div class="flex-shrink-0 h-10 w-10">
+                                {% comment %} 
+                                client.photo_document est une liste pré-chargée dans la vue, 
+                                contenant les ClientDocument de type 'PHOTO_ID'. 
+                                On prend le premier élément s'il existe.
+                                {% endcomment %}
+                                {% with photo_doc=client.photo_document.0 %}
+                                    {% if photo_doc and photo_doc.fichier %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ photo_doc.fichier.url }}" alt="Photo de {{ client.prenom }} {{ client.nom }}" onerror="this.onerror=null; this.src='https://placehold.co/40x40/cccccc/ffffff?text=NP';">
+                                    {% else %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/40x40/cccccc/ffffff?text=NP" alt="Pas de photo">
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"> {# whitespace-nowrap retiré #}
+                            <div class="flex flex-col">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ client.nom }} {{ client.prenom }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"> {# whitespace-nowrap retiré #}
+                            <div class="flex flex-col text-sm text-gray-500">
+                                <span><i class="fas fa-phone mr-1"></i> {{ client.telephone }}</span>
+                                {% if client.email %}<span class="mt-1"><i class="fas fa-envelope mr-1"></i> {{ client.email }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500"> {# whitespace-nowrap retiré pour permettre le retour à la ligne de l'adresse #}
+                            {{ client.adresse }}
+                        </td>
+                        <td class="px-6 py-4"> {# whitespace-nowrap retiré #}
+                            <div class="flex flex-col text-sm text-gray-500">
+                                <span><i class="fas fa-briefcase mr-1"></i> {{ client.profession|default:"N/A" }}</span>
+                                {% if client.revenu_mensuel %}<span class="mt-1"><i class="fas fa-money-bill-wave mr-1"></i> {{ client.revenu_mensuel|floatformat:2|intcomma }} XOF</span>{% else %}<span class="mt-1 text-gray-400">Revenu : N/A</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"> {# `whitespace-nowrap` retiré ici #}
+                            {% if client.is_active %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Actif
+                                </span>
+                            {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    Inactif
+                                </span>
+                            {% endif %}
+                        </td>
+                        {% if request.user.is_superuser %}
+                        <td class="px-6 py-4 text-sm text-gray-500"> {# `whitespace-nowrap` retiré ici #}
+                            {{ client.agent.username|default:"Non assigné" }}
+                        </td>
+                        {% endif %}
+                        {# Cellule Date d'inscription supprimée #}
+                        <td class="px-6 py-4 text-left text-sm font-medium"> {# whitespace-nowrap retiré #}
+                            <div class="flex items-center space-x-2">
+                                <a href="{% url 'client_detail' client.pk %}" 
+                                   class="p-2 rounded-full text-blue-500 hover:bg-blue-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" 
+                                   title="Voir détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'client_update' client.pk %}" 
+                                   class="p-2 rounded-full text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" 
+                                   title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {# L'action supprimer déclenche la modale de confirmation #}
+                                <button type="button" 
+                                        class="p-2 rounded-full text-red-500 hover:bg-red-100 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                        onclick="showDeleteModal('{% url 'client_delete' client.pk %}', '{{ client.nom }} {{ client.prenom }}')"
+                                        title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        {% if request.user.is_superuser %}
+                        <td colspan="8" class="px-6 py-4 whitespace-nowrap text-center text-gray-500"> {# Adjusted colspan #}
+                            Aucun client trouvé.
+                        </td>
+                        {% else %}
+                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-gray-500"> {# Adjusted colspan #}
+                            Aucun client trouvé.
+                        </td>
+                        {% endif %}
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if clients.has_other_pages %}
+    <nav class="mt-4 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-md" aria-label="Pagination">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if clients.has_previous %}
+            <a href="?page={{ clients.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Précédent</a>
+            {% else %}
+            <span class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed">Précédent</span>
+            {% endif %}
+
+            {% if clients.has_next %}
+            <a href="?page={{ clients.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Suivant</a>
+            {% else %}
+            <span class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 cursor-not-allowed">Suivant</span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ clients.start_index }}</span> à <span class="font-medium">{{ clients.end_index }}</span> sur <span class="font-medium">{{ clients.paginator.count }}</span> résultats
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    {% if clients.has_previous %}
+                    <a href="?page={{ clients.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Précédent</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+
+                    {% for i in clients.paginator.page_range %}
+                        {% if clients.number == i %}
+                        <span aria-current="page" class="relative z-10 inline-flex items-center border border-blue-500 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 focus:z-20">{{ i }}</span>
+                        {% else %}
+                        <a href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-20">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if clients.has_next %}
+                    <a href="?page={{ clients.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Suivant</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+</section>
+
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Confirmer la suppression</h3>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideDeleteModal()">
+                <span class="sr-only">Fermer</span>
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <p class="text-sm text-gray-500 mb-6">Êtes-vous sûr de vouloir supprimer <strong id="clientNameInModal"></strong> ? Cette action est irréversible.</p>
+        
+        <form id="deleteForm" method="post" action="">
+            <input type="hidden" name="csrfmiddlewaretoken" id="csrf_token_input" value="{{ csrf_token }}">
+            <div class="flex justify-end space-x-3">
+                <button type="button" class="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" onclick="hideDeleteModal()">
+                    Annuler
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-md border border-transparent shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Confirmer la suppression
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showDeleteModal(deleteUrl, clientName) {
+    document.getElementById('deleteForm').action = deleteUrl;
+    document.getElementById('clientNameInModal').textContent = clientName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+    
+</script>
+{%endblock%}
+

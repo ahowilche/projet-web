@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Microfinance - {% block title %}Tableau de Bord{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(59, 130, 246, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .status-active {
+            background-color: #dcfce7; /* green-100 */
+            color: #22c55e; /* green-500 */
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            text-transform: lowercase;
+            user-select: none;
+        }
+        /* Focus style for accessibility for sidebar links */
+        a:focus {
+            outline: 3px solid #2563eb; /* blue-600 */
+            outline-offset: 2px;
+        }
+
+        /* --- Custom CSS for Mobile Sidebar Overlay --- */
+        /* By default, hide sidebar on small screens, show on medium+ */
+        #sidebar {
+            transition: transform 0.3s ease-out; /* For slide effect */
+            transform: translateX(-100%); /* Start off-screen */
+        }
+        @media (min-width: 768px) { /* Adjust breakpoint as needed (md: for Tailwind) */
+            #sidebar {
+                display: flex !important; /* Ensure it's visible on desktop */
+                position: relative; /* Override fixed */
+                transform: translateX(0%); /* Reset transform */
+            }
+        }
+
+        /* When sidebar is open on mobile */
+        #sidebar.open {
+            display: flex; /* Override hidden class if applied by Tailwind on smaller screens */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 224px ;/* Same as w-64 */
+            height: 100vh; /* Full viewport height */
+            z-index: 50; /* Ensure it's above other content */
+            transform: translateX(0%); /* Slide in */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2); /* Optional shadow */
+        }
+
+        /* Overlay background when sidebar is open */
+        body.overlay-active::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+            z-index: 40; /* Below sidebar, above main content */
+            display: block; /* Ensure it's visible */
+        }
+        /* Hide overlay when not active */
+        body:not(.overlay-active)::before {
+            display: none;
+        }
+                html, body {
+    height: 100%;
+    overflow: hidden; /* Bloque le scroll sur toute la page */
+}
+
+/* Le contenu principal (main) défile verticalement */
+main {
+    overflow-y: auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Le header reste toujours visible */
+header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Optional shadow */
+}
+
+/* Sidebar reste fixe même sur scroll */
+#sidebar {
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+/* Scrollbar personnalisée pour le contenu (si tu veux garder l’effet) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: rgba(59, 130, 246, 0.5);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex">
+    <aside id="sidebar" class="flex flex-col bg-white w-64 border-r border-gray-200 min-h-screen sticky top-0 overflow-y-auto
+                     md:flex md:relative md:w-64 md:flex-shrink-0">
+        <div class="flex items-center space-x-4 px-6 py-5 border-b border-gray-200">
+            <div class="w-10 h-10 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-cyan-500 text-white font-semibold tracking-tight text-lg select-none">
+                G
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold">GMyCom</h1>
+                <p class="text-xs text-gray-500">Espace Agent</p>
+            </div>
+        </div>
+        <nav class="mt-6 flex-1 px-2 space-y-1" aria-label="Menu principal">
+            <a href="{% url 'dashboard' %}"
+               aria-current="{% if request.resolver_match.url_name == 'dashboard' %}page{% else %}false{% endif %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/>
+                <rect x="7" y="3" width="10" height="4" rx="1" ry="1"/></svg>
+                Tableau de bord
+            </a>
+            <a href="{% url 'client_list' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_detail' or request.resolver_match.url_name == 'client_update' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_detail' or request.resolver_match.url_name == 'client_update' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857"/>
+                <path d="M9 20H4v-2a3 3 0 0 1 5.356-1.857"/>
+                <circle cx="12" cy="7" r="4"/></svg>
+                Clients
+            </a>
+            <a href="{% url 'client_create' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'client_create' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'client_create' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                Ajouter Client
+            </a>
+            <a href="{% url 'compte_list' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'compte_list' or request.resolver_match.url_name == 'compte_detail' or request.resolver_match.url_name == 'compte_create' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'compte_list' or request.resolver_match.url_name == 'compte_detail' or request.resolver_match.url_name == 'compte_create' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/><path d="M22 7h-4V3h4z"/><path d="M2 13h10a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H2z"/></svg>
+                Comptes
+            </a>
+            <a href="{% url 'mouvement_create' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'mouvement_create' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'mouvement_create' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3L4 7l4 4"/><path d="M20 7H4"/><path d="M16 21l4-4-4-4"/><path d="M4 17h16"/></svg>
+                Nouvelle Transaction
+            </a>
+            <a href="{% url 'transaction_history_list' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'transaction_history_list' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'transaction_history_list' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Historique Transactions
+            </a>
+            <a href="{% url 'credit_list' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_detail' or request.resolver_match.url_name == 'credit_create' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_detail' or request.resolver_match.url_name == 'credit_create' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><path d="M4 12V3h16v9"/><path d="M12 22V12h8"/><path d="M4 12H12"/></svg>
+                Crédits
+            </a>
+            <a href="{% url 'remboursement_create' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'remboursement_create' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'remboursement_create' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2h-18zm6 10h6m-6 4h6"/></svg>
+                Nouveau Remboursement
+            </a>
+            <a href="{% url 'situation_report' %}"
+               class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg
+               {% if request.resolver_match.url_name == 'situation_report' %}bg-blue-100 text-blue-700 hover:bg-blue-200{% else %}text-gray-600 hover:bg-gray-100 hover:text-gray-900{% endif %} transition-colors">
+                <svg class="h-5 w-5 mr-3 {% if request.resolver_match.url_name == 'situation_report' %}text-blue-600{% else %}text-gray-400 group-hover:text-gray-700{% endif %}" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Rapports
+            </a>
+        </nav>
+        <div class="mt-auto px-6 py-4 border-t border-gray-200">
+            {% if request.user.is_authenticated %}
+                <p class="text-sm text-gray-500">Connecté en tant que:</p>
+                <p class="text-gray-900 font-semibold">{{ request.user.username }}</p>
+                {% if is_admin_user %} {# Utilisation de la nouvelle variable de contexte #}
+                    <p class="text-xs text-gray-500">Administrateur</p>
+                {% elif is_agent_group %} {# Utilisation de la nouvelle variable de contexte #}
+                    <p class="text-xs text-gray-500">Agent</p>
+                {% else %}
+                    <p class="text-xs text-gray-500">Utilisateur Standard</p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-white h-screen overflow-y-auto">
+        <header class="flex justify-between items-center border-b border-gray-200 p-6 sticky top-0 bg-white z-10">
+            <button id="menu-toggle" class="md:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Ouvrir le menu">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div>
+                <h2 class="text-xl font-semibold leading-tight text-gray-900">
+                    Bienvenue, {% if request.user.first_name %}{{ request.user.first_name }}{% else %}{{ request.user.username }}{% endif %}
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    {% if is_admin_user %}Administration{% elif is_agent_group %}Agence de Terrain{% else %}Utilisateur{% endif %}
+                </p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right leading-tight">
+                    <p class="text-gray-900 font-semibold">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-xs text-gray-500 -mt-0.5">
+                        {% if is_admin_user %}Admin{% elif is_agent_group %}Agent{% else %}User{% endif %}
+                    </p>
+                </div>
+                <form action="{% url 'logout' %}" method="post" class="inline-block">
+                    {% csrf_token %}
+                    <button type="submit" class="text-red-500 border border-red-300 rounded-md px-3 py-1 text-sm hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-400" aria-label="Déconnexion">
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="px-6 py-4">
+                {% for message in messages %}
+                    <div class="rounded-md p-4 mb-2
+                        {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %}"
+                        role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const body = document.body;
+
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                    body.classList.toggle('overlay-active'); // Add/remove overlay class on body
+                });
+
+                // Close sidebar when clicking outside (on the overlay)
+                body.addEventListener('click', function(event) {
+                    // Check if sidebar is open AND click is outside sidebar AND not on toggle button
+                    if (sidebar.classList.contains('open') &&
+                        !sidebar.contains(event.target) &&
+                        !menuToggle.contains(event.target) &&
+                        window.innerWidth < 768) { // Only close if on mobile breakpoint
+                        sidebar.classList.remove('open');
+                        body.classList.remove('overlay-active');
+                    }
+                });
+
+                // Close sidebar if window is resized to desktop size
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 768) { // Assuming md: breakpoint is 768px
+                        sidebar.classList.remove('open');
+                        body.classList.remove('overlay-active');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

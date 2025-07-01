@@ -1,0 +1,1475 @@
+{% extends 'gmycom/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6 sm:p-8">
+        <!-- Progress Bar and Step Indicators -->
+        <div class="mb-8">
+            <div class="flex justify-between text-sm font-medium text-gray-600 mb-2">
+                <span id="step-info">Étape 1 sur 5</span>
+                <span id="progress-percent">20% complété</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progress-fill" class="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-in-out" style="width: 20%;"></div>
+            </div>
+            
+            <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                <div class="step-indicator flex flex-col items-center p-2 rounded-lg transition-colors duration-200 active" data-step="1">
+                    <div class="step-icon w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white text-lg mb-2 shadow-md">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857"/><path d="M9 20H4v-2a3 3 0 0 1 5.356-1.857"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="text-center step-label">
+                        <p class="font-semibold text-sm">Informations personnelles</p>
+                        <small class="text-xs text-gray-500">Identité et état civil</small>
+                    </div>
+                </div>
+                <div class="step-indicator flex flex-col items-center p-2 rounded-lg transition-colors duration-200" data-step="2">
+                    <div class="step-icon w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 text-lg mb-2 shadow-md">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 16.92V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.08l4-4h2.84l4 4H20a2 2 0 0 1 2 2v2.08L16.92 12zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+                    </div>
+                    <div class="text-center step-label">
+                        <p class="font-semibold text-sm">Coordonnées</p>
+                        <small class="text-xs text-gray-500">Contact et adresse</small>
+                    </div>
+                </div>
+                <div class="step-indicator flex flex-col items-center p-2 rounded-lg transition-colors duration-200" data-step="3">
+                    <div class="step-icon w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 text-lg mb-2 shadow-md">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2zM9 18h6M9 6h6"/></svg>
+                    </div>
+                    <div class="text-center step-label">
+                        <p class="font-semibold text-sm">Situation professionnelle</p>
+                        <small class="text-xs text-gray-500">Revenus et emploi</small>
+                    </div>
+                </div>
+                <div class="step-indicator flex flex-col items-center p-2 rounded-lg transition-colors duration-200" data-step="4">
+                    <div class="step-icon w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 text-lg mb-2 shadow-md">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 22V8h6"/></svg>
+                    </div>
+                    <div class="text-center step-label">
+                        <p class="font-semibold text-sm">Documents justificatifs</p>
+                        <small class="text-xs text-gray-500">Pièces d'identité et autres</small>
+                    </div>
+                </div>
+                <div class="step-indicator flex flex-col items-center p-2 rounded-lg transition-colors duration-200" data-step="5">
+                    <div class="step-icon w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-gray-700 text-lg mb-2 shadow-md">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-8.91"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                    </div>
+                    <div class="text-center step-label">
+                        <p class="font-semibold text-sm">Validation</p>
+                        <small class="text-xs text-gray-500">Vérification et confirmation</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <form method="post" enctype="multipart/form-data" id="client-form" class="space-y-6">
+            {% csrf_token %}
+
+            {# Display non-field errors #}
+            {% if form.non_field_errors %}
+                <div class="rounded-md bg-red-100 text-red-700 p-4 mb-4">
+                    <ul class="list-disc list-inside">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- Étape 1: Informations personnelles -->
+            <div class="form-step active" id="step-1">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-user-circle mr-2"></i> Informations personnelles</h2>
+                <p class="text-gray-600 mb-6">Identité et état civil</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.nom.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.nom.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.nom }}
+                        {% if form.nom.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.nom.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.prenom.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.prenom.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.prenom }}
+                        {% if form.prenom.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.prenom.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.date_naissance.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.date_naissance.label }}
+                        </label>
+                        {{ form.date_naissance }}
+                        {% if form.date_naissance.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.date_naissance.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.lieu_naissance.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.lieu_naissance.label }}
+                        </label>
+                        {{ form.lieu_naissance }}
+                        {% if form.lieu_naissance.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.lieu_naissance.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.nationalite.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.nationalite.label }}
+                        </label>
+                        <input type="text" id="{{ form.nationalite.id_for_label }}" name="{{ form.nationalite.name }}" list="nationalite-list" value="{{ form.nationalite.value|default_if_none:'' }}" class="form-input"> {# Corrected ID #}
+                        <datalist id="nationalite-list">
+                            {# Options will be added by JavaScript or from Django context if provided #}
+                        </datalist>
+                        {% if form.nationalite.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.nationalite.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.sexe.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.sexe.label }}
+                        </label>
+                        {{ form.sexe }}
+                        {% if form.sexe.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.sexe.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.situation_matrimoniale.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.situation_matrimoniale.label }}
+                        </label>
+                        {{ form.situation_matrimoniale }}
+                        {% if form.situation_matrimoniale.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.situation_matrimoniale.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.nombre_personnes_charge.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.nombre_personnes_charge.label }}
+                        </label>
+                        {{ form.nombre_personnes_charge }}
+                        {% if form.nombre_personnes_charge.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.nombre_personnes_charge.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 2: Coordonnées -->
+            <div class="form-step hidden" id="step-2">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-address-book mr-2"></i> Coordonnées</h2>
+                <p class="text-gray-600 mb-6">Contact et adresse</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.telephone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.telephone.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.telephone }}
+                        {% if form.telephone.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.telephone.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.email.label }}
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="{{ form.adresse.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.adresse.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.adresse }}
+                        {% if form.adresse.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.adresse.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.adresse_pays.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.adresse_pays.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.adresse_pays }}
+                        {% if form.adresse_pays.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.adresse_pays.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 3: Situation professionnelle -->
+            <div class="form-step hidden" id="step-3">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-briefcase mr-2"></i> Situation professionnelle</h2>
+                <p class="text-gray-600 mb-6">Revenus et emploi</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.profession.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.profession.label }}
+                        </label>
+                        {# This is now an input type text with a datalist for suggestions #}
+                        <input type="text" id="{{ form.profession.id_for_label }}" name="{{ form.profession.name }}" list="profession-list" value="{{ form.profession.value|default_if_none:'' }}" class="form-input">
+                        <datalist id="profession-list">
+                            {# Options will be added by JavaScript from localStorage #}
+                        </datalist>
+                        {% if form.profession.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.profession.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.secteur_activite.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.secteur_activite.label }}
+                        </label>
+                        <input type="text" id="{{ form.secteur_activite.id_for_label }}" name="{{ form.secteur_activite.name }}" list="secteur-list" value="{{ form.secteur_activite.value|default_if_none:'' }}" class="form-input"> {# Corrected ID #}
+                        <datalist id="secteur-list">
+                            {# Options will be added by JavaScript or from Django context if provided #}
+                        </datalist>
+                        {% if form.secteur_activite.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.secteur_activite.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.revenu_mensuel.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.revenu_mensuel.label }}
+                        </label>
+                        {{ form.revenu_mensuel }}
+                        {% if form.revenu_mensuel.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.revenu_mensuel.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.frequence_revenu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.frequence_revenu.label }}
+                        </label>
+                        {# This will be a select element because it has choices in the Django model #}
+                        {{ form.frequence_revenu }} 
+                        {% if form.frequence_revenu.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.frequence_revenu.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.nom_employeur.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.nom_employeur.label }}
+                        </label>
+                        {{ form.nom_employeur }}
+                        {% if form.nom_employeur.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.nom_employeur.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.anciennete_emploi.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.anciennete_emploi.label }}
+                        </label>
+                        {{ form.anciennete_emploi }}
+                        {% if form.anciennete_emploi.errors %}
+                            <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                {% for error in form.anciennete_emploi.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 4: Documents justificatifs -->
+            <div class="form-step hidden" id="step-4">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-file-upload mr-2"></i> Documents justificatifs</h2>
+                <p class="text-gray-600 mb-6">Téléchargez les pièces d'identité et justificatifs</p>
+                
+                {{ formset.management_form }}
+                <div id="formset-container" class="space-y-4">
+                    {% for doc_form in formset %}
+                        <div class="document-form bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-800 mb-3">Document {{ forloop.counter }}</h3>
+                            {% if doc_form.non_field_errors %}
+                                <div class="rounded-md bg-red-100 text-red-700 p-2 text-sm mb-3">
+                                    <ul class="list-disc list-inside">
+                                        {% for error in doc_form.non_field_errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="{{ doc_form.type_document.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ doc_form.type_document.label }}
+                                    </label>
+                                    {{ doc_form.type_document }}
+                                    {% if doc_form.type_document.errors %}
+                                        <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                            {% for error in doc_form.type_document.errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ doc_form.fichier.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                        {{ doc_form.fichier.label }}
+                                    </label>
+                                    {{ doc_form.fichier }}
+                                    {% if doc_form.fichier.errors %}
+                                        <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                            {% for error in doc_form.fichier.errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                    {# Preview container for this file input #}
+                                    <div class="file-preview-container mt-2">
+                                        {# Initial preview if a file already exists #}
+                                        {% if doc_form.instance.fichier %}
+                                            <p class="text-xs text-gray-500 mb-1">Fichier actuel : <a href="{{ doc_form.instance.fichier.url }}" target="_blank" class="text-blue-500 hover:underline">{{ doc_form.instance.fichier.name }}</a></p>
+                                            {% if doc_form.instance.fichier.url|lower|slice:"-4:" == ".jpg" or doc_form.instance.fichier.url|lower|slice:"-5:" == ".jpeg" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".png" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".gif" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".bmp" %}
+                                                <img src="{{ doc_form.instance.fichier.url }}" alt="Aperçu du document" class="max-w-full h-auto rounded-md shadow-sm border border-gray-200" style="max-height: 150px; object-fit: contain;">
+                                            {% elif doc_form.instance.fichier.url|lower|slice:"-4:" == ".pdf" %}
+                                                <div class="flex items-center text-blue-600 mt-1">
+                                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                                    <span class="text-sm">Fichier PDF</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="flex items-center text-gray-600 mt-1">
+                                                    <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                                    <span class="text-sm">Fichier Document</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {# Add data-current-file attribute for JS to pick up existing files #}
+                                    <input type="hidden" data-current-file="{{ doc_form.instance.fichier.name }}" />
+                                    <input type="hidden" data-current-file-url="{% if doc_form.instance.fichier %}{{ doc_form.instance.fichier.url }}{% endif %}" />
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label for="{{ doc_form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                    {{ doc_form.description.label }}
+                                </label>
+                                {{ doc_form.description }}
+                                {% if doc_form.description.errors %}
+                                    <ul class="text-red-600 text-sm mt-1 list-none p-0">
+                                        {% for error in doc_form.description.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            {% if doc_form.instance.pk %} {# Only for existing forms that can be deleted #}
+                                {% if doc_form.DELETE %}
+                                    <div class="flex justify-end mt-4">
+                                        <label for="{{ doc_form.DELETE.id_for_label }}" class="inline-flex items-center text-red-600 text-sm">
+                                            {{ doc_form.DELETE }} Supprimer
+                                        </label>
+                                    </div>
+                                {% endif %}
+                            {% else %} {# For dynamically added new forms (where instance.pk is null) #}
+                                <div class="flex justify-end mt-4">
+                                    {# Ensure the DELETE input is a checkbox (Django's expected behavior for formsets) but hidden #}
+                                    <input type="checkbox" name="documents-{{ forloop.counter0 }}-DELETE" id="id_documents-{{ forloop.counter0 }}-DELETE" class="hidden">
+                                    <button type="button" class="remove-document-form inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        Supprimer ce document
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-document-form" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    Ajouter un document
+                </button>
+
+                {# Hidden empty form for dynamic addition #}
+                <div id="empty-form" class="hidden">
+                    <div class="document-form bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-800 mb-3">Nouveau Document</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type de Document</label>
+                                <select name="documents-__prefix__-type_document" class="form-select" id="id_documents-__prefix__-type_document">
+                                    {% for choice_val, choice_label in formset.empty_form.type_document.field.choices %}
+                                        <option value="{{ choice_val }}"{% if formset.empty_form.type_document.value == choice_val %} selected{% endif %}>{{ choice_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fichier</label>
+                                <input type="file" name="documents-__prefix__-fichier" class="form-input" id="id_documents-__prefix__-fichier">
+                                <div class="file-preview-container mt-2"></div> {# Preview container for new forms #}
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea name="documents-__prefix__-description" rows="2" class="form-textarea" id="id_documents-__prefix__-description"></textarea>
+                        </div>
+                        <input type="hidden" name="documents-__prefix__-id" id="id_documents-__prefix__-id">
+                        {# Ensure the DELETE input is a checkbox (Django's expected behavior for formsets) but hidden #}
+                        <input type="checkbox" name="documents-__prefix__-DELETE" id="id_documents-__prefix__-DELETE" class="hidden">
+                        {# client.pk is only available for update, for create, it's set after client save #}
+                        <input type="hidden" name="documents-__prefix__-client" value="{% if client %}{{ client.pk }}{% endif %}" id="id_documents-__prefix__-client"> 
+                        <div class="flex justify-end mt-4">
+                            <button type="button" class="remove-document-form inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                Supprimer ce document
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Étape 5: Validation -->
+            <div class="form-step hidden" id="step-5">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-check-circle mr-2"></i> Validation et Récapitulatif</h2>
+                <p class="text-gray-600 mb-6">Vérifiez les informations avant de soumettre.</p>
+
+                <div id="summary-content" class="space-y-4 text-gray-700">
+                    <!-- Le récapitulatif sera généré par JavaScript -->
+                    <p class="text-center text-gray-500">Chargement du récapitulatif...</p>
+                </div>
+            </div>
+
+            <!-- Message Area -->
+            <div id="form-message" class="hidden mt-4 p-3 rounded-md text-center text-sm" role="alert"></div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                <button type="button" id="prev-btn" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" disabled>
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Précédent
+                </button>
+                <button type="button" id="next-btn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Suivant
+                    <svg class="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+                <button type="submit" id="submit-btn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 hidden">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Créer le client
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Styles généraux pour les champs de formulaire (appliqués manuellement) */
+    .form-input, .form-textarea, .form-select {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db; /* gray-300 */
+        border-radius: 0.375rem; /* rounded-md */
+        font-size: 0.875rem; /* sm:text-sm */
+        line-height: 1.25rem; /* sm:text-sm */
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+        outline: none;
+        border-color: #3b82f6; /* blue-500 */
+        box-shadow: 0 0 0 1px #3b82f6; /* ring-blue-500 */
+    }
+    .form-input[type="file"] {
+        padding: 0.5rem;
+    }
+
+    /* Styles pour les indicateurs d'étape */
+    .step-indicator.active .step-icon {
+        background-color: #2563eb; /* blue-600 */
+        color: white;
+    }
+    .step-indicator.completed .step-icon {
+        background-color: #10b981; /* green-500 */
+        color: white;
+    }
+    .step-indicator.active .step-label p, .step-indicator.active .step-label small {
+        color: #2563eb; /* blue-600 */
+    }
+    .step-indicator.completed .step-label p, .step-indicator.completed .step-label small {
+        color: #10b981; /* green-500 */
+    }
+
+    /* Animation pour les éléments décoratifs sur la page de login (non utilisée ici mais pour référence) */
+    @keyframes pulse-slow {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.2;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 0.4;
+      }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 4s infinite ease-in-out;
+    }
+
+    /* Validation */
+    .error-message {
+        color: #ef4444; /* red-500 */
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<script>
+    class ClientFormWizard {
+        constructor() {
+            this.currentStep = 0; // Start at 0 for array indexing
+            this.formSteps = document.querySelectorAll('.form-step');
+            this.totalSteps = this.formSteps.length;
+            this.formData = new FormData(document.getElementById('client-form')); // Initialize with existing form data
+            
+            this.init();
+            this.setupEventListeners();
+            this.setupDatalistHandlers();
+            this.loadFromLocalStorage(); // Load datalist options
+        }
+
+        init() {
+            this.showStep(this.currentStep);
+            this.updateProgress();
+            this.updateStepIndicators();
+            this.updateNavigationButtons();
+            this.applyTailwindClassesToFormFields(); // Apply classes on initial load
+            this.setupExistingFilePreviews(); // Setup previews for pre-filled forms
+        }
+
+        setupEventListeners() {
+            document.getElementById('next-btn').addEventListener('click', () => this.nextStep());
+            document.getElementById('prev-btn').addEventListener('click', () => this.prevStep());
+            document.getElementById('client-form').addEventListener('submit', (e) => this.submitForm(e)); // Listen to form submit
+            document.getElementById('add-document-form').addEventListener('click', (e) => this.addDocumentForm(e));
+
+            // Attach validation listeners to all existing inputs
+            this.formSteps.forEach(step => {
+                step.querySelectorAll('input, select, textarea').forEach(input => {
+                    input.addEventListener('blur', () => this.validateField(input));
+                    input.addEventListener('input', () => this.clearFieldError(input));
+                });
+            });
+
+            // Attach remove listeners to all document forms (initial and dynamically added)
+            document.querySelectorAll('.remove-document-form').forEach(button => {
+                this.attachRemoveListener(button);
+            });
+
+            // Attach file preview listeners to all existing file inputs
+            document.querySelectorAll('.document-form input[type="file"]').forEach(fileInput => {
+                this.attachFilePreviewListener(fileInput);
+            });
+        }
+
+        setupDatalistHandlers() {
+            const nationaliteInput = document.getElementById('id_nationalite');
+            const nationaliteList = document.getElementById('nationalite-list');
+            if (nationaliteInput && nationaliteList) {
+                nationaliteInput.addEventListener('input', (e) => {
+                    this.handleDatalistInput(e.target, nationaliteList, 'nationalites');
+                });
+            }
+
+            const secteurInput = document.getElementById('id_secteur_activite');
+            const secteurList = document.getElementById('secteur-list');
+            if (secteurInput && secteurList) {
+                secteurInput.addEventListener('input', (e) => {
+                    this.handleDatalistInput(e.target, secteurList, 'secteurs');
+                });
+            }
+
+            const professionInput = document.getElementById('id_profession');
+            const professionList = document.getElementById('profession-list');
+            if (professionInput && professionList) {
+                professionInput.addEventListener('input', (e) => {
+                    this.handleDatalistInput(e.target, professionList, 'professions');
+                });
+            }
+        }
+
+        handleDatalistInput(input, datalist, storageKey) {
+            const value = input.value.trim();
+            if (value && !this.isValueInDatalist(datalist, value)) {
+                input.addEventListener('blur', () => {
+                    if (input.value.trim() === value) {
+                        this.addToDatalist(datalist, value, storageKey);
+                    }
+                }, { once: true });
+            }
+        }
+
+        isValueInDatalist(datalist, value) {
+            const options = datalist.querySelectorAll('option');
+            return Array.from(options).some(option => option.value.toLowerCase() === value.toLowerCase());
+        }
+
+        addToDatalist(datalist, value, storageKey) {
+            const option = document.createElement('option');
+            option.value = value;
+            datalist.appendChild(option);
+            this.saveToLocalStorage(storageKey, value);
+        }
+
+        saveToLocalStorage(key, value) {
+            let stored = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!stored.includes(value)) {
+                stored.push(value);
+                localStorage.setItem(key, JSON.stringify(stored));
+            }
+        }
+
+        loadFromLocalStorage() {
+            const nationalites = JSON.parse(localStorage.getItem('nationalites') || '[]');
+            const nationaliteList = document.getElementById('nationalite-list');
+            if (nationaliteList) {
+                nationalites.forEach(nat => {
+                    if (!this.isValueInDatalist(nationaliteList, nat)) {
+                        const option = document.createElement('option');
+                        option.value = nat;
+                        nationaliteList.appendChild(option);
+                    }
+                });
+            }
+
+            const secteurs = JSON.parse(localStorage.getItem('secteurs') || '[]');
+            const secteurList = document.getElementById('secteur-list');
+            if (secteurList) {
+                secteurs.forEach(sect => {
+                    if (!this.isValueInDatalist(secteurList, sect)) {
+                        const option = document.createElement('option');
+                        option.value = sect;
+                        secteurList.appendChild(option);
+                    }
+                });
+            }
+
+            const professions = JSON.parse(localStorage.getItem('professions') || '[]');
+            const professionList = document.getElementById('profession-list');
+            if (professionList) {
+                const defaultProfessions = ['Salarié(e)', 'Indépendant(e)', 'Retraité(e)', 'Étudiant(e)', 'Commerçant(e)', 'Artisan(e)', 'Agriculteur(trice)', 'Professeur(e)', 'Médecin', 'Ingénieur(e)', 'Consultant(e)'];
+                const allProfessions = Array.from(new Set([...defaultProfessions, ...professions]));
+
+                allProfessions.forEach(prof => {
+                    if (!this.isValueInDatalist(professionList, prof)) {
+                        const option = document.createElement('option');
+                        option.value = prof;
+                        professionList.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        nextStep() {
+            if (this.validateCurrentStep()) {
+                if (this.currentStep < this.totalSteps - 1) {
+                    this.currentStep++;
+                    this.showStep(this.currentStep);
+                    this.updateProgress();
+                    this.updateStepIndicators();
+                    if (this.currentStep === this.totalSteps - 1) {
+                        this.generateSummary();
+                    }
+                    this.updateNavigationButtons();
+                }
+            }
+        }
+
+        prevStep() {
+            if (this.currentStep > 0) {
+                this.currentStep--;
+                this.showStep(this.currentStep);
+                this.updateProgress();
+                this.updateStepIndicators();
+                this.updateNavigationButtons();
+            }
+        }
+
+        showStep(stepIndex) {
+            this.formSteps.forEach((step, index) => {
+                if (index === stepIndex) {
+                    step.classList.remove('hidden');
+                    step.classList.add('active');
+                } else {
+                    step.classList.add('hidden');
+                    step.classList.remove('active');
+                }
+            });
+        }
+
+        updateProgress() {
+            const progress = ((this.currentStep + 1) / this.totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('step-info').textContent = `Étape ${this.currentStep + 1} sur ${this.totalSteps}`;
+            document.getElementById('progress-percent').textContent = `${Math.round(progress)}% complété`;
+        }
+
+        updateStepIndicators() {
+            const icons = [
+                '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857"/><path d="M9 20H4v-2a3 3 0 0 1 5.356-1.857"/><circle cx="12" cy="7" r="4"/></svg>', // User
+                '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 16.92V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.08l4-4h2.84l4 4H20a2 2 0 0 1 2 2v2.08L16.92 12zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>', // Phone/Address
+                '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2zM9 18h6M9 6h6"/></svg>', // Briefcase
+                '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 22V8h6"/></svg>', // File upload
+                '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-8.91"/><path d="M22 4L12 14.01l-3-3"/></svg>' // Checkmark/Validation
+            ];
+
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                indicator.classList.remove('active', 'completed');
+                const iconContainer = indicator.querySelector('.step-icon');
+                const labelP = indicator.querySelector('.step-label p');
+                const labelSmall = indicator.querySelector('.step-label small');
+
+                iconContainer.classList.remove('bg-blue-600', 'bg-green-500', 'text-white');
+                iconContainer.classList.add('bg-gray-300', 'text-gray-700');
+                labelP.classList.remove('text-blue-600', 'text-green-500');
+                labelSmall.classList.remove('text-blue-600', 'text-green-500');
+                
+                iconContainer.innerHTML = icons[index];
+
+                if (index === this.currentStep) {
+                    indicator.classList.add('active');
+                    iconContainer.classList.remove('bg-gray-300', 'text-gray-700');
+                    iconContainer.classList.add('bg-blue-600', 'text-white');
+                    labelP.classList.add('text-blue-600');
+                    labelSmall.classList.add('text-blue-600');
+                } else if (index < this.currentStep) {
+                    indicator.classList.add('completed');
+                    iconContainer.classList.remove('bg-gray-300', 'text-gray-700');
+                    iconContainer.classList.add('bg-green-500', 'text-white');
+                    labelP.classList.add('text-green-500');
+                    labelSmall.classList.add('text-green-500');
+                    iconContainer.innerHTML = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-8.91"/><path d="M22 4L12 14.01l-3-3"/></svg>'; // Checkmark
+                }
+            });
+        }
+
+        updateNavigationButtons() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+
+            prevBtn.disabled = this.currentStep === 0;
+
+            if (this.currentStep === this.totalSteps - 1) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        validateCurrentStep() {
+            const currentStepElement = this.formSteps[this.currentStep];
+            const fieldsToValidate = currentStepElement.querySelectorAll('input:not([type="hidden"]):not([type="file"])[required], select[required], textarea[required]');
+            let isValid = true;
+
+            // Clear previous general messages
+            this.clearMessage();
+
+            fieldsToValidate.forEach(field => {
+                if (!this.validateField(field)) {
+                    isValid = false;
+                }
+            });
+
+            // Specific validation for document formset (Étape 4)
+            if (this.currentStep === 3) { 
+                const documentForms = document.querySelectorAll('#formset-container .document-form:not([style*="display: none"])');
+                const requiredDocumentTypes = ['PHOTO_ID', 'CIN_RECTO', 'JUST_DOM'];
+                const uploadedDocumentTypes = new Set();
+                let hasFileMissingForSelectedType = false;
+
+                // First pass: collect uploaded document types and check for files
+                documentForms.forEach(docForm => {
+                    const typeSelect = docForm.querySelector('[name$="-type_document"]');
+                    const fileInput = docForm.querySelector('[name$="-fichier"]');
+                    const isFormMarkedForDelete = docForm.querySelector('[name$="-DELETE"]').checked;
+
+                    if (!isFormMarkedForDelete && typeSelect && typeSelect.value && typeSelect.value !== "---------") {
+                        const selectedType = typeSelect.value;
+                        uploadedDocumentTypes.add(selectedType);
+                        
+                        const isFilePresent = (fileInput.files && fileInput.files.length > 0) || (fileInput.dataset.currentFile && fileInput.dataset.currentFile !== '');
+                        
+                        if (!isFilePresent) {
+                            hasFileMissingForSelectedType = true;
+                            this.showFieldError(fileInput, 'Un fichier est requis si un type de document est sélectionné.');
+                            isValid = false; // Mark as invalid
+                        } else {
+                            this.clearFieldError(fileInput); // Clear if previously marked as error
+                        }
+                    } else if (!isFormMarkedForDelete && (fileInput.files && fileInput.files.length > 0 || (fileInput.dataset.currentFile && fileInput.dataset.currentFile !== ''))) {
+                         // If a file is present but no type is selected
+                        this.showFieldError(typeSelect, 'Le type de document est obligatoire si un fichier est présent.');
+                        isValid = false;
+                    }
+                });
+
+                // Second pass: check if all mandatory documents are present
+                requiredDocumentTypes.forEach(requiredType => {
+                    if (!uploadedDocumentTypes.has(requiredType)) {
+                        isValid = false;
+                        // Find the type_document select elements to apply error visually
+                        let foundInput = false;
+                        documentForms.forEach(docForm => {
+                            const typeSelect = docForm.querySelector('[name$="-type_document"]');
+                            const isFormMarkedForDelete = docForm.querySelector('[name$="-DELETE"]').checked;
+                            if (!isFormMarkedForDelete && typeSelect.value === requiredType) {
+                                // If the required type is in a form but maybe the file is missing (already caught above)
+                                foundInput = true;
+                            }
+                        });
+
+                        if (!foundInput) {
+                            // If the required type is not found in any form (not added or added and deleted)
+                            // We can't attach error to a specific field if the entire "type" is missing.
+                            // Display a general message instead.
+                            let errorMessage = "Les documents suivants sont obligatoires : ";
+                            if (requiredType === 'PHOTO_ID') errorMessage += "Photo d'identité, ";
+                            if (requiredType === 'CIN_RECTO') errorMessage += "Carte d'identité (recto), ";
+                            if (requiredType === 'JUST_DOM') errorMessage += "Justificatif de domicile, ";
+                            
+                            // Remove trailing comma and space
+                            errorMessage = errorMessage.replace(/, $/, '.'); 
+                            this.showMessage(errorMessage, 'error');
+                        }
+                    }
+                });
+
+                if (hasFileMissingForSelectedType && isValid) { // If there were field-specific file errors, and no general missing type error
+                    this.showMessage("Veuillez vous assurer que tous les documents sélectionnés ont un fichier joint.", "error");
+                }
+            }
+            return isValid;
+        }
+
+        validateField(field) {
+            this.clearFieldError(field);
+            let isValid = true;
+            let errorMessage = '';
+
+            if (!field.checkValidity()) {
+                isValid = false;
+                errorMessage = field.validationMessage;
+            } else if (field.id === 'id_date_naissance' && field.value) {
+                const age = this.calculateAge(new Date(field.value));
+                if (age < 18 || age > 100) {
+                    isValid = false;
+                    errorMessage = 'L\'âge doit être entre 18 et 100 ans.';
+                }
+            }
+
+            if (!isValid) {
+                this.showFieldError(field, errorMessage);
+            }
+            return isValid;
+        }
+
+        showFieldError(field, message) {
+            field.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            let errorElement = field.parentNode.querySelector('.error-message');
+            if (!errorElement) {
+                errorElement = document.createElement('div');
+                errorElement.className = 'error-message';
+                field.parentNode.appendChild(errorElement);
+            }
+            errorElement.textContent = message;
+        }
+
+        clearFieldError(field) {
+            field.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            const errorElement = field.parentNode.querySelector('.error-message');
+            if (errorElement) {
+                errorElement.remove();
+            }
+            // Do not clear general message here, it's handled by validateCurrentStep
+            // this.clearMessage(); 
+        }
+
+        clearAllFieldErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            document.querySelectorAll('input.border-red-500, select.border-red-500, textarea.border-red-500').forEach(el => {
+                el.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            });
+        }
+
+        calculateAge(birthDate) {
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        addDocumentForm(event) {
+            event.preventDefault();
+            const formsetContainer = document.getElementById('formset-container');
+            const totalFormsInput = document.querySelector('#id_documents-TOTAL_FORMS');
+            let currentTotalForms = parseInt(totalFormsInput.value);
+
+            const newFormHtml = document.getElementById('empty-form').innerHTML.replace(/__prefix__/g, currentTotalForms);
+            const newFormDiv = document.createElement('div');
+            newFormDiv.innerHTML = newFormHtml;
+            const newDocumentForm = newFormDiv.firstElementChild;
+
+            formsetContainer.appendChild(newDocumentForm);
+            totalFormsInput.value = currentTotalForms + 1;
+
+            this.applyTailwindClassesToFormFields(newDocumentForm);
+            this.attachRemoveListener(newDocumentForm.querySelector('.remove-document-form'));
+            this.attachFilePreviewListener(newDocumentForm.querySelector('input[type="file"]')); // Attach preview listener to new file input
+            this.updateDocumentFormTitles();
+
+            newDocumentForm.querySelectorAll('input, select, textarea').forEach(input => {
+                input.addEventListener('blur', () => this.validateField(input));
+                input.addEventListener('input', () => this.clearFieldError(input));
+            });
+        }
+
+        attachRemoveListener(button) {
+            // Utilise une fonction fléchée pour conserver le contexte 'this' de la classe
+            // et appelle .closest() sur l'élément cible de l'événement (le bouton).
+            button.addEventListener('click', (e) => { 
+                e.preventDefault();
+                const formToRemove = e.currentTarget.closest('.document-form'); 
+                if (formToRemove) {
+                    const deleteInput = formToRemove.querySelector('input[name$="-DELETE"]');
+                    if (deleteInput) {
+                        deleteInput.checked = true; // Marquer pour suppression
+                        formToRemove.style.display = 'none'; // Masquer visuellement
+                        this.clearFilePreview(formToRemove.querySelector('input[type="file"]')); // Effacer l'aperçu
+                    } 
+                    this.updateDocumentFormTitles();
+                }
+            });
+        }
+
+        // New function to handle file previews
+        attachFilePreviewListener(fileInput) {
+            fileInput.addEventListener('change', (e) => this.handleFilePreview(e.target));
+        }
+
+        handleFilePreview(fileInput) {
+            const previewContainer = fileInput.closest('div').querySelector('.file-preview-container');
+            previewContainer.innerHTML = ''; // Clear previous preview
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = "Aperçu du document";
+                        img.classList.add('max-w-full', 'h-auto', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                        img.style.maxHeight = '150px';
+                        img.style.objectFit = 'contain';
+                        previewContainer.appendChild(img);
+                    } else if (file.type === 'application/pdf') {
+                        const pdfIcon = `
+                            <div class="flex items-center text-blue-600 mt-1">
+                                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                <span class="text-sm">Fichier PDF : ${file.name}</span>
+                            </div>
+                        `;
+                        previewContainer.innerHTML = pdfIcon;
+                    } else {
+                        const docIcon = `
+                            <div class="flex items-center text-gray-600 mt-1">
+                                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                <span class="text-sm">Fichier : ${file.name}</span>
+                            </div>
+                        `;
+                        previewContainer.innerHTML = docIcon;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // If no file is selected, clear the preview
+                this.clearFilePreview(fileInput);
+            }
+        }
+
+        clearFilePreview(fileInput) {
+            const previewContainer = fileInput.closest('div').querySelector('.file-preview-container');
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+            }
+        }
+
+        setupExistingFilePreviews() {
+            // This runs on initial load to show previews for pre-filled forms
+            document.querySelectorAll('.document-form').forEach(docForm => {
+                const fileInput = docForm.querySelector('input[type="file"]');
+                const currentFileUrl = docForm.querySelector('input[data-current-file-url]');
+                const currentFileName = docForm.querySelector('input[data-current-file]');
+
+                if (currentFileUrl && currentFileUrl.value && currentFileName && currentFileName.value) {
+                    const previewContainer = fileInput.closest('div').querySelector('.file-preview-container');
+                    const fileName = currentFileName.value.split('/').pop(); // Get just the file name
+                    const fileUrl = currentFileUrl.value;
+                    let previewHTML = `<p class="text-xs text-gray-500 mb-1">Fichier actuel : <a href="${fileUrl}" target="_blank" class="text-blue-500 hover:underline">${fileName}</a></p>`;
+
+                    // Basic check for image extensions (can be expanded)
+                    if (/\.(jpe?g|png|gif|bmp)$/i.test(fileName)) {
+                        previewHTML += `<img src="${fileUrl}" alt="Aperçu du document" class="max-w-full h-auto rounded-md shadow-sm border border-gray-200" style="max-height: 150px; object-fit: contain;">`;
+                    } else if (/\.pdf$/i.test(fileName)) {
+                        previewHTML += `
+                            <div class="flex items-center text-blue-600 mt-1">
+                                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                <span class="text-sm">Fichier PDF</span>
+                            </div>
+                        `;
+                    } else {
+                        previewHTML += `
+                            <div class="flex items-center text-gray-600 mt-1">
+                                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L14.414 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0-4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                                <span class="text-sm">Fichier Document</span>
+                            </div>
+                        `;
+                    }
+                    previewContainer.innerHTML = previewHTML;
+                }
+            });
+        }
+
+        updateDocumentFormTitles() {
+            let visibleFormCount = 0;
+            document.querySelectorAll('#formset-container .document-form').forEach(form => {
+                if (form.style.display !== 'none') {
+                    visibleFormCount++;
+                    const titleElement = form.querySelector('h3');
+                    if (titleElement) {
+                        titleElement.textContent = `Document ${visibleFormCount}`;
+                    }
+                }
+            });
+        }
+
+        generateSummary() {
+            const summaryContent = document.getElementById('summary-content');
+            let summaryHTML = '<h3 class="text-xl font-semibold text-gray-800 mb-4">Récapitulatif des informations</h3><dl class="divide-y divide-gray-200">';
+
+            const mainFormFields = [
+                { id: 'id_nom', label: 'Nom' },
+                { id: 'id_prenom', label: 'Prénom' },
+                { id: 'id_date_naissance', label: 'Date de naissance' },
+                { id: 'id_lieu_naissance', label: 'Lieu de naissance' },
+                { id: 'id_nationalite', label: 'Nationalité' },
+                { id: 'id_sexe', label: 'Sexe' },
+                { id: 'id_situation_matrimoniale', label: 'Situation Matrimoniale' },
+                { id: 'id_nombre_personnes_charge', label: 'Nombre de personnes à charge' },
+                { id: 'id_telephone', label: 'Téléphone Principal' },
+                { id: 'id_email', label: 'Email' },
+                { id: 'id_adresse', label: 'Adresse Résidentielle Complète' },
+                { id: 'id_adresse_pays', label: 'Pays' },
+                { id: 'id_profession', label: 'Profession' },
+                { id: 'id_secteur_activite', label: 'Secteur d\'activité' },
+                { id: 'id_revenu_mensuel', label: 'Revenu Mensuel' },
+                { id: 'id_frequence_revenu', label: 'Fréquence des revenus' },
+                { id: 'id_nom_employeur', label: 'Nom de l\'employeur / Entreprise' },
+                { id: 'id_anciennete_emploi', label: 'Ancienneté (en mois)' },
+            ];
+
+            const sectionMap = {
+                'id_nom': 'Informations Personnelles', 'id_telephone': 'Coordonnées',
+                'id_profession': 'Situation Professionnelle'
+            };
+            let currentSectionTitle = '';
+
+            mainFormFields.forEach(field => {
+                const inputElement = document.getElementById(field.id);
+                if (inputElement) {
+                    let value;
+                    if (inputElement.tagName === 'SELECT') {
+                        value = inputElement.options[inputElement.selectedIndex].text;
+                    } else if (inputElement.type === 'date') {
+                        value = inputElement.value ? new Date(inputElement.value).toLocaleDateString('fr-FR') : '';
+                    } else {
+                        value = inputElement.value;
+                    }
+
+                    if (value === '' || value === 'Sélectionner' || value === 'None' || value === 'null' || value === '---------') {
+                        value = 'Non renseigné';
+                    }
+
+                    const sectionTitleForField = sectionMap[field.id] || currentSectionTitle;
+                    if (sectionTitleForField !== currentSectionTitle) {
+                        if (currentSectionTitle !== '') {
+                            summaryHTML += `</dl>`;
+                        }
+                        summaryHTML += `<div class="mt-6 border-t pt-4"><h3 class="text-lg font-semibold text-gray-800 mb-2">${sectionTitleForField}</h3></div><dl class="divide-y divide-gray-200">`;
+                        currentSectionTitle = sectionTitleForField;
+                    }
+
+                    summaryHTML += `
+                        <div class="py-3 flex justify-between text-sm font-medium">
+                            <dt class="text-gray-500">${field.label}</dt>
+                            <dd class="text-gray-900">${value}</dd>
+                        </div>
+                    `;
+                }
+            });
+            summaryHTML += `</dl>`;
+
+            let documentsHTML = '<div class="mt-6 border-t pt-4"><h3 class="text-lg font-semibold text-gray-800 mb-2">Documents Téléchargés</h3></div><div class="space-y-4">';
+            let hasDocuments = false;
+            document.querySelectorAll('#formset-container .document-form').forEach(docForm => {
+                const deleteInput = docForm.querySelector('input[name$="-DELETE"]');
+                // Check if the form is marked for deletion or explicitly hidden
+                if (deleteInput && deleteInput.checked || docForm.style.display === 'none') {
+                    return;
+                }
+
+                const typeSelect = docForm.querySelector('[name$="-type_document"]');
+                const fileInput = docForm.querySelector('[name$="-fichier"]');
+                const descriptionInput = docForm.querySelector('[name$="-description"]');
+                
+                if (typeSelect && fileInput) {
+                    const type = typeSelect.options[typeSelect.selectedIndex].text;
+                    let fileName = '';
+                    let fileUrl = '';
+
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        fileName = fileInput.files[0].name;
+                        fileUrl = URL.createObjectURL(fileInput.files[0]); // Create temporary URL for new files
+                    } else {
+                         const currentFileHiddenInput = docForm.querySelector('input[data-current-file]');
+                         const currentFileUrlHiddenInput = docForm.querySelector('input[data-current-file-url]');
+                         if (currentFileHiddenInput && currentFileHiddenInput.value && currentFileUrlHiddenInput && currentFileUrlHiddenInput.value) {
+                             fileName = currentFileHiddenInput.value.split('/').pop();
+                             fileUrl = currentFileUrlHiddenInput.value;
+                         }
+                    }
+                    const description = descriptionInput ? descriptionInput.value.trim() : '';
+                    
+                    if (fileName && type !== "---------") {
+                        hasDocuments = true;
+                        documentsHTML += `
+                            <div class="p-3 bg-gray-100 rounded-md border border-gray-200">
+                                <p class="text-sm"><strong>Type de document :</strong> ${type}</p>
+                                <p class="text-sm"><strong>Fichier :</strong> <a href="${fileUrl}" target="_blank" class="font-medium text-blue-700 hover:underline">${fileName}</a></p>
+                                ${description ? `<p class="text-sm"><strong>Description :</strong> ${description}</p>` : ''}
+                                {# Add image preview to summary as well if it's an image #}
+                                {# The Django template logic below is for files already saved to the server #}
+                                {% if doc_form.instance.fichier %}
+                                    {% if doc_form.instance.fichier.url|lower|slice:"-4:" == ".jpg" or doc_form.instance.fichier.url|lower|slice:"-5:" == ".jpeg" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".png" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".gif" or doc_form.instance.fichier.url|lower|slice:"-4:" == ".bmp" %}
+                                        <img src="{{ doc_form.instance.fichier.url }}" alt="Aperçu du document" class="max-w-full h-auto rounded-md shadow-sm border border-gray-200 mt-2" style="max-height: 100px; object-fit: contain;">
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        `;
+                    }
+                }
+            });
+            documentsHTML += '</div>';
+
+            if (!hasDocuments) {
+                documentsHTML = '<p class="text-gray-500 mt-4">Aucun document téléchargé.</p>';
+            }
+
+            summaryContent.innerHTML = summaryHTML + documentsHTML;
+        }
+
+        async submitForm(e) {
+            e.preventDefault();
+            this.clearMessage();
+
+            if (!this.validateCurrentStep()) {
+                // If validation fails, the error message is already set by validateCurrentStep
+                // And errors are displayed on fields
+                return;
+            }
+
+            const form = document.getElementById('client-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const originalBtnText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<div class="spinner"></div> Création en cours...';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(form);
+
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showMessage('Client créé avec succès !', 'success');
+                        this.resetForm();
+                        if (result.redirect_url) {
+                            window.location.href = result.redirect_url; 
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        this.showMessage('Erreur lors de la création du client. ' + (result.message || ''), 'error');
+                        if (result.errors) {
+                            this.displayDjangoErrors(result.errors);
+                        }
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server error:', response.status, errorText);
+                    this.showMessage('Une erreur est survenue lors de la soumission du formulaire.', 'error');
+                }
+            } catch (error) {
+                console.error('Network or unexpected error:', error);
+                this.showMessage('Une erreur réseau est survenue. Veuillez réessayer.', 'error');
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        displayDjangoErrors(allErrors) {
+            this.clearAllFieldErrors();
+            this.clearMessage();
+            this.firstErrorScrolled = false;
+
+            if (allErrors.main_form) {
+                for (const fieldName in allErrors.main_form) {
+                    const fieldErrors = allErrors.main_form[fieldName];
+                    const inputElement = document.getElementById(`id_${fieldName}`);
+                    if (inputElement) {
+                        this.showFieldError(inputElement, fieldErrors.join(' '));
+                        if (!this.firstErrorScrolled) {
+                            inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            this.firstErrorScrolled = true;
+                        }
+                    } else {
+                        const formMessageArea = document.getElementById('form-message');
+                        if (formMessageArea) {
+                            formMessageArea.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                            formMessageArea.classList.add('bg-red-100', 'text-red-700');
+                            formMessageArea.innerHTML += `<p><strong>Erreur du formulaire principal:</strong> ${fieldErrors.join(' ')}</p>`;
+                        }
+                    }
+                }
+            }
+
+            if (allErrors.formset_forms && allErrors.formset_forms.length > 0) {
+                allErrors.formset_forms.forEach(formsetErrorDict => {
+                    for (const formPrefix in formsetErrorDict) {
+                        const formErrors = formsetErrorDict[formPrefix];
+                        for (const fieldName in formErrors) {
+                            const fieldErrors = formErrors[fieldName];
+                            const fieldId = `id_${formPrefix}-${fieldName}`;
+                            const inputElement = document.getElementById(fieldId);
+                            if (inputElement) {
+                                this.showFieldError(inputElement, fieldErrors.join(' '));
+                                if (!this.firstErrorScrolled) {
+                                    inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    this.firstErrorScrolled = true; 
+                                }
+                            } else {
+                                const formMessageArea = document.getElementById('form-message');
+                                if (formMessageArea) {
+                                    formMessageArea.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                                    formMessageArea.classList.add('bg-red-100', 'text-red-700');
+                                    formMessageArea.innerHTML += `<p><strong>Erreur document (${formPrefix}):</strong> ${fieldErrors.join(' ')}</p>`;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        showMessage(message, type) {
+            const messageArea = document.getElementById('form-message');
+            messageArea.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'text-red-700', 'text-green-700');
+            messageArea.textContent = message;
+            if (type === 'success') {
+                messageArea.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'error') {
+                messageArea.classList.add('bg-red-100', 'text-red-700');
+            }
+            messageArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        clearMessage() {
+            const messageArea = document.getElementById('form-message');
+            messageArea.classList.add('hidden');
+            messageArea.textContent = '';
+        }
+
+        resetForm() {
+            this.currentStep = 0;
+            document.getElementById('client-form').reset();
+            this.formSteps.forEach(step => {
+                step.classList.add('hidden');
+                step.classList.remove('active');
+            });
+            this.showStep(this.currentStep);
+            this.updateProgress();
+            this.updateStepIndicators();
+            this.updateNavigationButtons();
+            this.clearMessage();
+            this.clearAllFieldErrors();
+
+            const formsetContainer = document.getElementById('formset-container');
+            const initialForms = parseInt(document.querySelector('#id_documents-INITIAL_FORMS').value || 0);
+            const totalForms = parseInt(document.querySelector('#id_documents-TOTAL_FORMS').value || 0);
+
+            for (let i = totalForms - 1; i >= initialForms; i--) {
+                const formElement = formsetContainer.querySelector(`.document-form:nth-child(${i + 1})`);
+                if (formElement) {
+                    // Clear the preview for the form being removed/reset
+                    const fileInput = formElement.querySelector('input[type="file"]');
+                    if (fileInput) {
+                        this.clearFilePreview(fileInput);
+                    }
+                    formElement.remove(); // For newly added forms that were not saved
+                }
+            }
+            // For existing forms marked for deletion (hidden), just reset their display
+            document.querySelectorAll('.document-form[style*="display: none"]').forEach(hiddenForm => {
+                hiddenForm.style.display = ''; // Show it again
+                const deleteInput = hiddenForm.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = false; // Uncheck delete flag
+                }
+            });
+
+
+            document.querySelector('#id_documents-TOTAL_FORMS').value = initialForms;
+            this.updateDocumentFormTitles();
+            this.applyTailwindClassesToFormFields(); // Re-apply styles after reset
+            this.setupExistingFilePreviews(); // Re-setup previews in case initial forms exist
+        }
+
+        applyTailwindClassesToFormFields(container = document) {
+            const inputs = container.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea');
+            inputs.forEach(input => {
+                input.classList.remove('form-control');
+                input.classList.add(
+                    'appearance-none', 'block', 'w-full', 'px-3', 'py-2',
+                    'border', 'border-gray-300', 'rounded-md', 'shadow-sm',
+                    'placeholder-gray-400', 'focus:outline-none', 'focus:ring-blue-500',
+                    'focus:border-blue-500', 'sm:text-sm'
+                );
+            });
+
+            const fileInputs = container.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(fileInput => {
+                fileInput.classList.add('py-2');
+            });
+
+            const hiddenInputs = container.querySelectorAll('input[type="hidden"]');
+            hiddenInputs.forEach(input => {
+                input.classList.remove(...Array.from(input.classList));
+                input.style.display = 'none';
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const wizard = new ClientFormWizard();
+    });
+</script>
+{%endblock%}
