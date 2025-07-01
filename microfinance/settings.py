@@ -41,10 +41,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
 
     'gmycom',
-    'user',
+   
     'clients',
-    'loans',
-    'reports',
+   
     'widget_tweaks', # Add this line
 
 ]

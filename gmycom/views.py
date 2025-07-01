@@ -1221,65 +1221,6 @@ def remboursement_create(request, credit_id=None):
 
 # --- Rapports simples ---
 
-@login_required
-@user_passes_test(is_agent_access, login_url='login')
-def situation_report(request):
-    """
-    Génère un rapport de situation (clients avec solde, crédits en cours, etc.).
-    """
-    report_type = request.GET.get('type', 'clients_balance')
-    data = []
-    title = ""
-
-    if report_type == 'clients_balance':
-        title = "Rapport : Clients et Solde de leurs comptes"
-        clients_with_balance = Client.objects.annotate(
-            total_balance=Sum('comptes__solde')
-        ).order_by('nom')
-        data = clients_with_balance
-
-    elif report_type == 'active_credits':
-        title = "Rapport : Crédits en cours"
-        active_credits = Credit.objects.filter(status='ACTIVE').select_related('client').order_by('due_date')
-        data = active_credits
-
-    elif report_type == 'transactions_history':
-        title = "Rapport : Historique des transactions"
-        # Vous pouvez ajouter des filtres de date ici si nécessaire
-        transactions_history = HistoriqueTransaction.objects.select_related('compte__client').order_by('-date_operation')[:100] # Limiter pour le rapport
-        data = transactions_history
-    
-    elif report_type == 'summary_metrics':
-        title = "Rapport : Métriques Résumées"
-        total_clients = Client.objects.count()
-        total_comptes_open = Compte.objects.filter(is_active=True).count()
-        total_balance_all_comptes = Compte.objects.aggregate(Sum('solde'))['solde__sum'] or Decimal('0.00')
-        total_credits_granted = Credit.objects.aggregate(Sum('amount_granted'))['amount_granted__sum'] or Decimal('0.00')
-        total_credits_repaid = Credit.objects.aggregate(Sum('amount_repaid'))['amount_repaid__sum'] or Decimal('0.00')
-        
-        data = {
-            'total_clients': total_clients,
-            'total_comptes_open': total_comptes_open,
-            'total_balance_all_comptes': total_balance_all_comptes,
-            'total_credits_granted': total_credits_granted,
-            'total_credits_repaid': total_credits_repaid,
-            'active_credits_count': Credit.objects.filter(status='ACTIVE').count(),
-            'repaid_credits_count': Credit.objects.filter(status='REPAID').count(),
-        }
-
-    # Préparation des variables de contexte pour le rôle de l'utilisateur
-    is_admin_user = request.user.is_superuser
-    is_agent_group = request.user.groups.filter(name='Agents').exists()
-
-    context = {
-        'report_type': report_type,
-        'title': title,
-        'data': data,
-        'is_admin_user': is_admin_user, # Ajouté au contexte
-        'is_agent_group': is_agent_group, # Ajouté au contexte
-    }
-    return render(request, 'gmycom/situation_report.html', context)
-
 
 @login_required
 @user_passes_test(is_agent_access, login_url='login')
@@ -1363,3 +1304,154 @@ def confirm_delete(request):
     # Ce n'est pas une vue autonome, mais un template qui est rendu par d'autres vues de suppression.
     # Le contenu de cette fonction est minimal car la logique de suppression est dans les vues spécifiques.
     pass
+
+
+
+# gmycom/views.py
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models.functions import TruncMonth
+from django.db.models.functions import ExtractMonth, ExtractYear # Pour les regroupements par mois
+
+@login_required
+@user_passes_test(is_agent_access, login_url='login')
+def situation_report(request):
+    # 1. Calcul des KPIs
+    total_clients = Client.objects.count()
+    total_comptes_open = Compte.objects.filter(is_active=True).count()  # <-- corrigé ici
+    total_balance_all_comptes = Compte.objects.aggregate(Sum('solde'))['solde__sum'] or Decimal('0.00')
+    total_credits_granted = Credit.objects.aggregate(Sum('amount_granted'))['amount_granted__sum'] or Decimal('0.00')
+    total_credits_repaid = Credit.objects.aggregate(Sum('amount_repaid'))['amount_repaid__sum'] or Decimal('0.00')
+    total_deposits = Mouvement.objects.filter(type_mouvement='DEPOT').aggregate(Sum('montant'))['montant__sum'] or Decimal('0.00')
+    total_withdrawals = Mouvement.objects.filter(type_mouvement='RETRAIT').aggregate(Sum('montant'))['montant__sum'] or Decimal('0.00')
+    
+    active_credits_count = Credit.objects.filter(status='EN_COURS').count()
+    repaid_credits_count = Credit.objects.filter(status='REMBOURSE').count()
+    overdue_credits_count = Credit.objects.filter(status='EN_RETARD').count()
+    
+    active_credits_amount = Credit.objects.filter(status='EN_COURS').aggregate(Sum('total_expected_repayment'))['total_expected_repayment__sum'] or Decimal('0.00')
+
+    global_stats = {
+        'total_clients': total_clients,
+        'total_comptes_open': total_comptes_open,
+        'total_balance_all_comptes': total_balance_all_comptes,
+        'total_credits_granted': total_credits_granted,
+        'total_credits_repaid': total_credits_repaid,
+        'total_deposits': total_deposits,
+        'total_withdrawals': total_withdrawals,
+        'active_credits_count': active_credits_count,
+        'repaid_credits_count': repaid_credits_count,
+        'overdue_credits_count': overdue_credits_count,
+        'active_credits_amount': active_credits_amount,
+    }
+
+    # 2. Données graphiques
+    monthly_data = Mouvement.objects.annotate(
+        year_month=TruncMonth('date_mouvement')
+    ).values('year_month', 'type_mouvement').annotate(
+        total_amount=Sum('montant')
+    ).order_by('year_month', 'type_mouvement')
+
+    monthly_labels = sorted(list(set([d['year_month'].strftime('%Y-%m') for d in monthly_data])))
+    monthly_deposits = [0] * len(monthly_labels)
+    monthly_withdrawals = [0] * len(monthly_labels)
+
+    for item in monthly_data:
+        month_str = item['year_month'].strftime('%Y-%m')
+        index = monthly_labels.index(month_str)
+        if item['type_mouvement'] == 'DEPOT':
+            monthly_deposits[index] = float(item['total_amount'])
+        elif item['type_mouvement'] == 'RETRAIT':
+            monthly_withdrawals[index] = float(item['total_amount'])
+
+    monthly_display_labels = [date.fromisoformat(label + '-01').strftime('%b %Y') for label in monthly_labels]
+
+    monthly_flow_chart_data = {
+        'labels': monthly_display_labels,
+        'datasets': [
+            {
+                'label': 'Dépôts',
+                'data': monthly_deposits,
+                'borderColor': 'rgb(34, 197, 94)',
+                'fill': False,
+                'tension': 0.3
+            },
+            {
+                'label': 'Retraits',
+                'data': monthly_withdrawals,
+                'borderColor': 'rgb(239, 68, 68)',
+                'fill': False,
+                'tension': 0.3
+            }
+        ]
+    }
+
+    credit_status_data = Credit.objects.values('status').annotate(count=Count('status'))
+    credit_status_labels = [item['status'] for item in credit_status_data]
+    credit_status_counts = [item['count'] for item in credit_status_data]
+
+    global_credit_status_chart_data = {
+        'labels': credit_status_labels,
+        'datasets': [{
+            'data': credit_status_counts,
+            'backgroundColor': [
+                'rgb(245, 158, 11)',
+                'rgb(34, 197, 94)',
+                'rgb(239, 68, 68)',
+                'rgb(107, 114, 128)'
+            ],
+            'hoverOffset': 4
+        }]
+    }
+
+    top_clients_balance = Client.objects.annotate(
+        total_balance=Sum('comptes__solde')
+    ).order_by('-total_balance')[:5]
+
+    top_clients_labels = [f"{c.prenom} {c.nom}" for c in top_clients_balance]
+    top_clients_balances = [float(c.total_balance) for c in top_clients_balance]
+
+    top_clients_balance_chart_data = {
+        'labels': top_clients_labels,
+        'datasets': [{
+            'label': 'Solde (F CFA)',
+            'data': top_clients_balances,
+            'backgroundColor': 'rgb(59, 130, 246)',
+        }]
+    }
+
+    account_type_balance = Compte.objects.values('type_compte').annotate(
+        total_solde=Sum('solde')
+    )
+    
+    account_type_labels = [item['type_compte'] for item in account_type_balance]
+    account_type_values = [float(item['total_solde']) for item in account_type_balance]
+
+    account_type_balance_chart_data = {
+        'labels': account_type_labels,
+        'datasets': [{
+            'data': account_type_values,
+            'backgroundColor': [
+                'rgb(79, 70, 229)',
+                'rgb(20, 184, 166)',
+                'rgb(249, 115, 22)'
+            ],
+            'hoverOffset': 4
+        }]
+    }
+
+    is_admin_user = request.user.is_superuser
+    is_agent_group = request.user.groups.filter(name='Agents').exists()
+
+    context = {
+        'global_stats': global_stats,
+        'monthly_flow_chart_data': json.dumps(monthly_flow_chart_data),
+        'global_credit_status_chart_data': json.dumps(global_credit_status_chart_data),
+        'top_clients_balance_chart_data': json.dumps(top_clients_balance_chart_data),
+        'account_type_balance_chart_data': json.dumps(account_type_balance_chart_data),
+        'is_admin_user': is_admin_user,
+        'is_agent_group': is_agent_group,
+    }
+    return render(request, 'gmycom/situation_report.html', context)
+
